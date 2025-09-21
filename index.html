@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phishing Email Keyword Detection</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 400px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 32px 24px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      h2 {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      label {
+        font-weight: bold;
+        margin-top: 12px;
+        display: block;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 6px;
+        margin-bottom: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1em;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1em;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 12px;
+        border-radius: 4px;
+        background: #e9ecef;
+        font-size: 1.1em;
+      }
+      .error {
+        color: #d9534f;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Phishing Email Keyword Detection</h2>
+      <form id="emailForm">
+        <label for="subject">Email Subject</label>
+        <input type="text" id="subject" name="subject" required />
+
+        <label for="body">Email Body</label>
+        <textarea id="body" name="body" rows="6" required></textarea>
+
+        <button type="submit">Check Email</button>
+      </form>
+      <div id="result" class="result" style="display: none"></div>
+      <div id="error" class="error"></div>
+    </div>
+    <script>
+      document.getElementById("emailForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        document.getElementById("result").style.display = "none";
+        document.getElementById("error").textContent = "";
+        const subject = document.getElementById("subject").value;
+        const body = document.getElementById("body").value;
+        try {
+          const response = await fetch("http://127.0.0.1:5000/detect_keywords", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subject, body }),
+          });
+          if (!response.ok) throw new Error("Server error");
+          const data = await response.json();
+          document.getElementById("result").innerHTML = `<strong>Risk Score:</strong> ${data.score}<br>
+                     <strong>Label:</strong> ${data.label}`;
+          document.getElementById("result").style.display = "block";
+        } catch (err) {
+          document.getElementById("error").textContent = "Error connecting to backend: " + err.message;
+        }
+      });
+    </script>
+  </body>
+</html>
