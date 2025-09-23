@@ -94,10 +94,22 @@ KEYWORD_REGEX = re.compile(
 
 def keyword_score(subject, body):
     score = 0
+
+    # Subject: high risk, each keyword = 3 points
     subject_matches = KEYWORD_REGEX.findall(str(subject))
     score += 3 * len(subject_matches)
-    body_matches = KEYWORD_REGEX.findall(str(body))
-    score += sum(2 if i < 50 else 1 for i in range(len(body_matches)))
+
+    # Body: higher risk for keywords early in the message
+    body_text = str(body)
+    early_body = body_text[:200]  # First 200 characters
+    early_matches = KEYWORD_REGEX.findall(early_body)
+    score += 2 * len(early_matches)
+
+    # Remaining body: lower risk
+    remaining_body = body_text[200:]
+    remaining_matches = KEYWORD_REGEX.findall(remaining_body)
+    score += 1 * len(remaining_matches)
+
     return score
 
 def find_keywords(text):
