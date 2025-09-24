@@ -33,7 +33,7 @@ csv_datasets = {
     "cleaned_spamAssassin": r'Datasets\cleaned_SA.csv',
     "cleaned_enron": r'Datasets\cleaned_enron.csv',
     "raw_spamAssassin": r'Datasets\spamAssassin.csv',
-    "raw_enron": r'Datasets\enronEmails.csv'
+    "raw_enron": r'Datasets\enron.csv'
 }
 
 # Save sampled datasets to eml and txt files
