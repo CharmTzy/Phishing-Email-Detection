@@ -37,7 +37,11 @@ with st.form("email_form"):
         eml_text = uploaded_file.read().decode("utf-8", errors="ignore")
         subject_match = re.search(r"^Subject:\s*(.*)$", eml_text, re.MULTILINE)
         subject = subject_match.group(1) if subject_match else subject
-        plain_text_match = re.search(r"Content-Type:\s*text/plain[^]*?(\r?\n\r?\n)([^]*?)(?=\r?\n--|$)", eml_text, re.IGNORECASE)
+        plain_text_match = re.search(
+            r"Content-Type:\s*text/plain.*?(\r?\n\r?\n)(.*?)(?=\r?\n--|$)",
+            eml_text,
+            re.IGNORECASE | re.DOTALL
+        )
         if plain_text_match:
             body = plain_text_match.group(2).replace("=\r\n", "").replace("=3D", "=").strip()
         else:
