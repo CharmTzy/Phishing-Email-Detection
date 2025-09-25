@@ -13,7 +13,7 @@ class Colors:
 
 stop_words = {
     "the","is","in","at","of","a","an","and","to","for","on","with","by","from",
-    "this","that","it","as","be","or","are","was","were"
+    "this","that","it","as","be","or","are","was","were","hello", "hi","dear",
 }
 
 # unique keywords (lowercase, no stopwords)
@@ -21,7 +21,7 @@ keywords = list(dict.fromkeys(
     w.lower() for w in text.split() if w.lower() not in stop_words
 ))
 
-df = pd.read_csv("cleaned_SA.csv")
+df = pd.read_csv(r"Datasets/cleaned_SA.csv")
 matched_keywords = []
 
 def calc_score(sub_df):

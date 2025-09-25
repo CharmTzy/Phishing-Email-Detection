@@ -1,3 +1,5 @@
 cleaned_SA.csv
 emails.csv
 __pycache__
+Datasets/
+.DS_Store
