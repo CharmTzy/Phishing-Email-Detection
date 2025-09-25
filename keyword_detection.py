@@ -1,123 +1,67 @@
-import re
+import pandas as pd
+import string
 
-# List of common phishing keywords
-PHISHING_KEYWORDS = [
-    # Urgency and Threats 
-    "urgent", "immediate action required", "act now", 
-    "important notification", "attention required", 
-    "final notice", "last chance", "limited time offer", 
-    "time-sensitive", "your action is needed", "critical alert",
+subject = input("Email Subject: ")
+body = input("Email Body: ")
 
-    # Fear and Panic 
-    "account locked", "unauthorized login attempt", 
-    "suspicious activity detected", "payment failed", 
-    "security compromised", "your account will be closed", 
-    "legal action pending", "fraudulent activity", 
-    "data breach", "compliance violation", "penalty warning",
+text = f"{subject} {body}"
+text = text.translate(str.maketrans('', '', string.punctuation))
 
-    # Requests for Verification or Action 
-    "verify your account", "confirm your password", 
-    "update your information", "verify your identity", 
-    "validate your login", "reset your credentials", 
-    "unlock your account", "reactivate your account", 
-    "action required", "secure your account", 
-    "login to resolve", "check your details", 
-    "account verification required", "identity confirmation needed",
+class Colors:
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
 
-    # Fake Opportunities
-    "you have won", "prize", "lottery", "gift card", 
-    "reward points", "cash back", "free trial", 
-    "special offer", "bonus", "claim your prize", 
-    "exclusive offer", "VIP access", "redeem now", 
-    "get your refund", "win big", "receive funds",
+stop_words = {
+    "the","is","in","at","of","a","an","and","to","for","on","with","by","from",
+    "this","that","it","as","be","or","are","was","were"
+}
 
-    # Email and Attachment Lures
-    "click here", "open attachment", "download invoice", 
-    "open document", "secure link", "view statement", 
-    "see details", "open this file", "attachment included", 
-    "access your account", "follow the link", 
-    "view message", "verify transaction", 
-    "document awaiting signature",
+# unique keywords (lowercase, no stopwords)
+keywords = list(dict.fromkeys(
+    w.lower() for w in text.split() if w.lower() not in stop_words
+))
 
-    # Financial Scams
-    "bank details", "credit card information", 
-    "account number", "loan approval", 
-    "tax refund", "overpayment", "wire transfer", 
-    "secure transaction", "unpaid invoice", 
-    "billing error", "payment required", "tax reminder", 
-    "financial settlement", "claim payment", 
-    "unexpected charge",
+df = pd.read_csv("cleaned_SA.csv")
+matched_keywords = []
 
-    # Posing as Authorities or Companies
-    "support team", "official request", "banking alert", 
-    "customer service", "IT department", "account security", 
-    "trusted source", "system administrator", 
-    "helpdesk", "technical support", 
-    "service provider", "payment gateway", 
-    "verification team", "fraud prevention unit", 
-    "compliance team", "risk management", 
-    "official communication", "important update",
+def calc_score(sub_df):
+    if len(sub_df) == 0:
+        return 0
 
-    # Social Engineering Triggers
-    "dear customer", "valued user", "trusted account holder", 
-    "dear [username]", "greetings", "hello user", 
-    "your trusted partner", "dear friend", "important client", 
-    "personalized offer", "exclusive invitation", 
-    "relationship update", "membership renewal", 
-    "VIP customer alert",
+    count = 0
+    for kw in keywords:
 
-    # Technical Jargon and Fake Security Terms
-    "SSL certificate expired", "firewall alert", 
-    "IP address mismatch", "malware detected", 
-    "system scan required", "login attempt failed", 
-    "DNS issue", "email server blocked", 
-    "invalid credentials", "security token expired", 
-    "two-factor authentication disabled", 
-    "unauthorized device detected", "server downtime alert", 
-    "software update required",
+        if df["subject"].str.contains(kw, case=False, na=False).any():
+            subj_hits = sub_df["subject"].str.contains(kw, case=False, na=False)
+            count += subj_hits.sum()
+            matched_keywords.append(kw)
+        elif df["body"].str.contains(kw, case=False, na=False).any():
+            body_hits = sub_df["body"].str.contains(kw, case=False, na=False)
+            count += body_hits.sum()
+            matched_keywords.append(kw)
 
-    # Miscellaneous
-    "update your email", "confirm email address", 
-    "password expiry", "access suspended", 
-    "new feature activation", "trial ending soon", 
-    "pending message", "storage limit exceeded", 
-    "account migration", "new terms of service", 
-    "renew your subscription", "membership expired", 
-    "close your account", "pending approval",
-]
+    return count / len(sub_df)
 
-# Precompile regex for all keywords (word boundaries, case-insensitive)
-KEYWORD_REGEX = re.compile(
-    r'\b(' + '|'.join(re.escape(kw) for kw in PHISHING_KEYWORDS) + r')\b',
-    re.IGNORECASE
-)
+def output(subject, body):
+    for i in subject.split():
+        if i.lower() in matched_keywords:
+            subject = subject.replace(i, Colors.BLUE + i + Colors.RESET)
+    
+    for j in body.split():
+        if j.lower() in matched_keywords:
+            body = body.replace(j, Colors.BLUE + j + Colors.RESET)
 
-def keyword_score(subject, body):
-    score = 0
+    print("Subject: " + subject)
+    print("Body: " + body)
 
-    # Subject: high risk, each keyword = 3 points
-    subject_matches = KEYWORD_REGEX.findall(str(subject))
-    score += 3 * len(subject_matches)
+if __name__ == "__main__":
+    safe_df = df[df["label"] == 0]
+    spam_df = df[df["label"] == 1]
 
-    # Body: higher risk for keywords early in the message
-    body_text = str(body)
-    early_body = body_text[:200]  # First 200 characters
-    early_matches = KEYWORD_REGEX.findall(early_body)
-    score += 2 * len(early_matches)
+    score_safe = calc_score(safe_df)
+    score_spam = calc_score(spam_df)
 
-    # Remaining body: lower risk
-    remaining_body = body_text[200:]
-    remaining_matches = KEYWORD_REGEX.findall(remaining_body)
-    score += 1 * len(remaining_matches)
+    output(subject, body)
 
-    return score
-
-def find_keywords(text):
-    # Return a list of unique phishing keywords found in the text
-    return sorted(set(KEYWORD_REGEX.findall(str(text))))
-
-def highlight_keywords(text):
-    # Return text with phishing keywords wrapped in <mark> tags.
-    def replacer(match):
-        return f"<mark>{match.group(0)}</mark>"
-    return KEYWORD_REGEX.sub(replacer, str(text))
+    risk_score = (score_safe + score_spam) / 2
+    print("Risk Score: " + str(round(risk_score, 4) * 100) + "%")
