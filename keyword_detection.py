@@ -5,7 +5,7 @@ import string
 df = pd.read_csv(r"Datasets/cleaned_SA.csv")
 
 class Colors:
-    BLUE = '\033[94m'
+    GREEN = '\033[92m'
     RESET = '\033[0m'
 
 stop_words = {
@@ -51,11 +51,11 @@ def output(subject, body):
     """EXACT same function as original"""
     for i in subject.split():
         if i.lower() in matched_keywords:
-            subject = subject.replace(i, Colors.BLUE + i + Colors.RESET)
+            subject = subject.replace(i, Colors.GREEN + i + Colors.RESET)
     
     for j in body.split():
         if j.lower() in matched_keywords:
-            body = body.replace(j, Colors.BLUE + j + Colors.RESET)
+            body = body.replace(j, Colors.GREEN + j + Colors.RESET)
     print("Subject: " + subject)
     print("Body: " + body)
 
@@ -87,7 +87,7 @@ def highlight_keywords(text):
         pattern = r'\b' + re.escape(keyword) + r'\b'
         highlighted_text = re.sub(
             pattern, 
-            f'<span style="background-color: #007bff; color: white; padding: 2px 4px; border-radius: 3px;">{keyword}</span>', 
+            f'<span style="background-color: #28a745; color: white; padding: 2px 4px; border-radius: 3px;">{keyword}</span>', 
             highlighted_text, 
             flags=re.IGNORECASE
         )
