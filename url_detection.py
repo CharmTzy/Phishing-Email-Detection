@@ -46,14 +46,14 @@ def extract_urls(email):
     # Return None if no domains were found, else return the list
     return domains if domains else None
 
-# Function to validate the url 
+# Function to validate the url, returns true if valid, false if suspicious
 def URLvalidator(url):
     try:
         result = urlparse(url.strip())  # strip spaces first
 
         # Scheme must be http or https
         if result.scheme not in ("http", "https"):
-            return 'The URL is a phishing link!'
+            return False
 
         # Netloc must look like a domain
         domain_pattern = re.compile(
@@ -63,10 +63,10 @@ def URLvalidator(url):
         # If the netloc (domain part) does not match this pattern,
         # then it’s not a proper domain → treat it as phishing.
         if not domain_pattern.match(result.netloc):
-            return 'The URL is a phishing link!'
+            return False
 
-        return 'The URL is a real domain!'
+        return True
     except:
-        return 'The URL is a phishing link!'
+        return False
 
 
