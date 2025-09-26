@@ -2,36 +2,92 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(page_title="Phishing Email Keyword Detection", page_icon=":shield:", layout="centered")
+st.set_page_config(page_title="Phishing Email Keyword Detection", page_icon=":shield:", layout="wide")
 
+# ===== Custom CSS =====
 st.markdown(
     """
     <style>
-    .main {background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);}
-    .result-box {
-        background: #e3f6ff;
+    /* Force full width */
+    .block-container {
+        max-width: 100% !important;
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    .big-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    .subtitle {
+        font-size: 1.1rem;
+        color: #555;
+        margin-bottom: 25px;
+    }
+    .step-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 30px;
+        margin-bottom: 12px;
+        color: #2c3e50;
+    }
+    .result-card {
+        flex: 1;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
         border-radius: 10px;
-        border: 1px solid #b3e0ff;
-        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
         padding: 20px;
-        margin-top: 24px;
-        color: #007bff;
-        font-size: 1.13em;
+        text-align: center;
+        font-size: 1.1rem;
         font-weight: 500;
-        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .result-card span {
+        font-size: 1.3rem;
+    }
+    .btn-analyze {
+        background-color: #e74c3c;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 12px;
+        border-radius: 6px;
+        width: 100%;
+    }
+    div.stForm button[type="submit"] {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        padding: 6px 18px !important;
+        border-radius: 6px !important;
+        border: none !important;
+        width: auto !important;
+        display: inline-block !important;
+    }
+    div.stForm button[type="submit"]:hover {
+        background-color: #c0392b !important;  /* darker red on hover */
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-st.title("🔎 Phishing Email Keyword Detection")
+# ===== Page Title =====
+st.markdown("<div class='big-title'>🔎 Phishing Email Keyword Detection</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div class='subtitle'>This tool analyzes email subjects and bodies to detect common phishing-related keywords and assigns a risk score.</div>",
+    unsafe_allow_html=True
+)
+
+# ===== Step 1: Enter Email Details =====
+st.markdown("<div class='step-title'>1. Enter Email Details</div>", unsafe_allow_html=True)
 
 with st.form("email_form"):
     subject = st.text_input("Email Subject")
     body = st.text_area("Email Body", height=120)
     uploaded_file = st.file_uploader("Or upload email file (.eml)", type=["eml"])
-    submitted = st.form_submit_button("Check Email")
+    submitted = st.form_submit_button("Analyze Email", type="primary")
 
     if uploaded_file is not None:
         eml_text = uploaded_file.read().decode("utf-8", errors="ignore")
@@ -48,9 +104,10 @@ with st.form("email_form"):
             split_parts = re.split(r"\r?\n\r?\n", eml_text)
             body = "\n\n".join(split_parts[1:]).strip() if len(split_parts) > 1 else body
 
+# ===== Step 2: Analysis Results =====
 if submitted:
     if not subject and not body:
-        st.error("Please provide either subject/body or upload an email file.")
+        st.error("⚠️ Please provide either subject/body or upload an email file.")
     else:
         try:
             response = requests.post(
@@ -61,16 +118,33 @@ if submitted:
             response.raise_for_status()
             data = response.json()
 
-            # Build the entire result HTML
-            result_html = f"""
-            <div class="result-box">
-                <strong>Matched Keywords:</strong> <span style='color:#d9534f'>{', '.join(data['keywords']) if data['keywords'] else 'None'}</span><br><br>
-                <strong>Email Subject:</strong><br>{data['subject_highlighted']}<br><br>
-                <strong>Email Body:</strong><br><span style='white-space: pre-line'>{data['body_highlighted']}</span><br><br>
-                <strong>Risk Score:</strong> {data['score']}<br>
-                <strong>Label:</strong> {data['label']}
-            </div>
-            """
-            st.markdown(result_html, unsafe_allow_html=True)
+            st.markdown("<div class='step-title'>2. Analysis Results</div>", unsafe_allow_html=True)
+
+            # Result Summary (keep only Risk Score + Label in cards)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(
+                    f"<div class='result-card'><span>⚖️</span><br>Risk Score<br><strong>{data['score']}</strong></div>",
+                    unsafe_allow_html=True
+                )
+            with col2:
+                st.markdown(
+                    f"<div class='result-card'><span>🏷️</span><br>Label<br><strong>{data['label']}</strong></div>",
+                    unsafe_allow_html=True
+                )
+
+            # Detailed Breakdown
+            st.markdown("### Detailed Breakdown")
+            st.markdown(f"**Email Subject:** {data['subject_highlighted']}", unsafe_allow_html=True)
+            st.markdown(f"**Email Body:**\n\n{data['body_highlighted']}", unsafe_allow_html=True)
+
+            # Matched Keywords AFTER body
+            st.markdown("---")
+            st.markdown("**Matched Keywords:**")
+            if data['keywords']:
+                st.markdown(f"<span style='color:#d9534f'>{', '.join(data['keywords'])}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("✅ None found")
+
         except Exception as e:
-            st.error(f"Error connecting to backend: {e}")
+            st.error(f"❌ Error connecting to backend: {e}")
