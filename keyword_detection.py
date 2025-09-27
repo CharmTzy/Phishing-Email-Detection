@@ -1,7 +1,10 @@
 import pandas as pd
 import string
 import re
-
+dataset_lengths=[]
+with open("dataset_length.txt") as f:
+    for x in f:
+            dataset_lengths.append(x.strip('\n'))
 # Load dataset
 df = pd.read_csv(r"Datasets/cleaned_SA.csv")
 
@@ -57,11 +60,10 @@ def calc_score(sub_df):
             count += subj_hits.sum()
             matched_keywords.append(kw)
         # Check for keyword matches in body
-        elif df["body"].str.contains(kw, case=False, na=False).any():
+        if df["body"].str.contains(kw, case=False, na=False).any():
             body_hits = sub_df["body"].str.contains(kw, case=False, na=False)
             count += body_hits.sum()
             matched_keywords.append(kw)
-    
     # Return proportion of matching rows
     return count / len(sub_df)
 
@@ -92,11 +94,38 @@ def keyword_score(subject, body):
     # Calculate keyword match scores
     score_safe = calc_score(safe_df)
     score_spam = calc_score(spam_df)
-    
     # Risk score is average of both
     risk_score = (score_safe + score_spam) / 2
     return round(risk_score, 4) * 100
+def keyword_score_alt(subject, body):
+    """
+    Main function to calculate the risk score for an email.
+    Returns a percentage score indicating likelihood of keywords appearing in safe/spam emails.
+    """
+    process_email(subject, body)
+    # Calculate keyword match scores
+#    score_safe = calc_score(safe_df)
+ #   score_spam = calc_score(spam_df)
+    with open('safe_subject.txt',encoding="utf-8") as safe_sub, open('safe_body.txt',encoding="utf-8") as safe_body,open('spam_subject.txt',encoding="utf-8") as spam_sub, open('spam_body.txt',encoding="utf-8") as spam_body:
+        safe_count=0
+        spam_count=0
+        for kw in keywords:
+            # Check for keyword matches in safe subject 
+            safe_count += safe_sub.read().count(kw.lower())
 
+            # Check for keyword matches in safe body
+            safe_count += safe_body.read().count(kw.lower())
+
+
+            # Check for keyword matches in spam subject
+            spam_count += spam_sub.read().count(kw.lower())
+
+            # Check for keyword matches in spam body
+            spam_count += spam_body.read().count(kw.lower())
+        # Risk score is average of safe matches and spam matches
+        risk_score = (safe_count/int(dataset_lengths[1]) + spam_count/int(dataset_lengths[2])) / 2
+        return round(risk_score*100, 2)
+    
 def find_keywords(text):
     # Return a list of keywords found in the text.
     return list(set(matched_keywords))

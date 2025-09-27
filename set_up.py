@@ -84,6 +84,14 @@ def createTxtFiles():
         f.write(txtString)
     #clears the text string
     txtString=""
+    with open("dataset_length.txt", "w",encoding="utf-8") as f:
+        #writes total dataset length
+        f.write(str(len(df))+"\n")
+        #writes safe dataset length
+        f.write(str(len(df[df["label"] == 0]))+"\n")
+        #writes spam dataset length
+        f.write(str(len(df[df["label"] == 1]))+"\n")
+
 
 if __name__=="__main__":
     createTxtFiles()
