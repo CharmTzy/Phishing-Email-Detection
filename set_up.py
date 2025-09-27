@@ -25,6 +25,8 @@ def createTxtFiles():
     #writes to file
     with open("safe_subject.txt", "w",encoding="utf-8") as f:
         f.write(txtString)
+    #clears the text string
+    txtString=""
     #Creates Text File for safe body keywords
     for i in df[df["label"] == 0]["body"]:  
         row=str(i)
@@ -39,6 +41,8 @@ def createTxtFiles():
     #writes to file
     with open("safe_body.txt", "w",encoding="utf-8") as f:
         f.write(txtString)
+    #clears the text string
+    txtString=""
     #Creates Text File for spam subject keywords
     for i in df[df["label"] == 1]["subject"]:  
         row=str(i)
@@ -53,6 +57,8 @@ def createTxtFiles():
     #writes to file
     with open("spam_subject.txt", "w",encoding="utf-8") as f:
         f.write(txtString)
+    #clears the text string
+    txtString=""
     #Creates Text File for spam body keywords
     for i in df[df["label"] == 1]["body"]:  
         row=str(i)
@@ -67,14 +73,17 @@ def createTxtFiles():
     #writes to file
     with open("spam_body.txt", "w",encoding="utf-8") as f:
         f.write(txtString)
+    #clears the text string
+    txtString=""
     #write safe urls to a file
     for i in df[df["label"] == 0]["urls"]:  
         row=str(i)
-        
-        for x in keywords:
-            txtString+=x+"\n"
+        if row!="nan":
+            txtString+=row+"\n"
     with open("safe_urls.txt", "w",encoding="utf-8") as f:
         f.write(txtString)
+    #clears the text string
+    txtString=""
 
 if __name__=="__main__":
     createTxtFiles()
