@@ -2,11 +2,16 @@ import pandas as pd
 import string
 import spacy
 import re
+import requests
+from io import StringIO
 
 nlp = spacy.load("en_core_web_sm")
 
-# Load dataset once
-df = pd.read_csv(r"Datasets/cleaned_SA.csv")
+# Correct raw CSV URL from GitHub
+url = "https://raw.githubusercontent.com/CharmTzy/cleaned-SA-dataset/main/cleaned_SA.csv"
+
+response = requests.get(url, verify=False)
+df = pd.read_csv(StringIO(response.text))
 
 suspicious_keywords = []
 
