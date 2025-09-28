@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from keyword_detection import keyword_score, find_keywords, highlight_keywords
 from flask_cors import CORS
+from url_detection import extract_urls, URLvalidator
 
 app = Flask(__name__)
 CORS(app)
@@ -43,5 +44,43 @@ def detect_keywords_api():
             "body_highlighted": ""
         }), 500
 
+@app.route('/validate_url', methods=['POST'])
+def validate_url_api():
+    try:
+        data = request.get_json()
+        url_input = data.get('url', '')   
+        email_body = data.get('body', '') 
+
+        urls_to_check = []
+
+        # If user provided a URL in the input field, use it
+        if url_input:
+            urls_to_check.append(url_input)
+
+        # Extract any URLs from the email body
+        extracted = extract_urls(email_body)
+        if extracted:
+            urls_to_check.extend(extracted)
+
+        # Remove duplicates
+        urls_to_check = list(set(urls_to_check))
+
+        # Validate all URLs
+        results = {}
+        for u in urls_to_check:
+            results[u] = "Safe" if URLvalidator(u) else "Suspicious"
+
+        return jsonify({
+            "urls_checked": urls_to_check,
+            "results": results
+        })
+    
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "urls_checked": [],
+            "results": {}
+        }), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)

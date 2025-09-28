@@ -105,13 +105,13 @@ with st.form("email_form"):
         else:
             split_parts = re.split(r"\r?\n\r?\n", eml_text)
             body = "\n\n".join(split_parts[1:]).strip() if len(split_parts) > 1 else body
-
 # ===== Step 2: Analysis Results =====
 if submitted:
-    if not subject and not body:
-        st.error("⚠️ Please provide either subject/body or upload an email file.")
+    if not subject and not body and not url:
+        st.error("⚠️ Please provide either subject/body, URL, or upload an email file.")
     else:
         try:
+            # Call keyword detection API
             response = requests.post(
                 "http://127.0.0.1:5000/detect_keywords",
                 json={"subject": subject, "body": body},
@@ -119,9 +119,10 @@ if submitted:
             )
             response.raise_for_status()
             data = response.json()
+
             st.markdown("<div class='step-title'>2. Analysis Results</div>", unsafe_allow_html=True)
 
-            # Result Summary (keep only Risk Score + Label in cards)
+            # Result Summary (Risk Score + Label)
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(
@@ -139,13 +140,32 @@ if submitted:
             st.markdown(f"**Email Subject:** {data['subject_highlighted']}", unsafe_allow_html=True)
             st.markdown(f"**Email Body:**\n\n{data['body_highlighted']}", unsafe_allow_html=True)
 
-            # Matched Keywords AFTER body
+            # Suspicious Keywords
             st.markdown("---")
             st.markdown("**Suspicious Keywords:**")
             if data['keywords']:
                 st.markdown(f"<span style='color:#d9534f'>{', '.join(data['keywords'])}</span>", unsafe_allow_html=True)
             else:
                 st.markdown("✅ None found")
+
+            # ===== URL Detection =====
+            st.markdown("---")
+            st.markdown("**URL Analysis:**")
+            url_response = requests.post(
+                "http://127.0.0.1:5000/validate_url",
+                json={"url": url, "body": body},
+                timeout=10
+            )
+            url_response.raise_for_status()
+            url_data = url_response.json()
+
+            if url_data.get("urls_checked"):
+                for u in url_data["urls_checked"]:
+                    status = url_data["results"].get(u, "Unknown")
+                    color = "#28a745" if status == "Safe" else "#d9534f"
+                    st.markdown(f"<span style='color:{color}; padding:4px 6px; border-radius:4px;'>{u} → {status}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("✅ No URLs found")
 
         except Exception as e:
             st.error(f"❌ Error connecting to backend: {e}")
