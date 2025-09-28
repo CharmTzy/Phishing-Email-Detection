@@ -119,7 +119,6 @@ if submitted:
             )
             response.raise_for_status()
             data = response.json()
-
             st.markdown("<div class='step-title'>2. Analysis Results</div>", unsafe_allow_html=True)
 
             # Result Summary (keep only Risk Score + Label in cards)
@@ -142,7 +141,7 @@ if submitted:
 
             # Matched Keywords AFTER body
             st.markdown("---")
-            st.markdown("**Matched Keywords:**")
+            st.markdown("**Suspicious Keywords:**")
             if data['keywords']:
                 st.markdown(f"<span style='color:#d9534f'>{', '.join(data['keywords'])}</span>", unsafe_allow_html=True)
             else:

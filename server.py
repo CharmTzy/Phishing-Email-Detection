@@ -21,7 +21,7 @@ def detect_keywords_api():
         # Get highlighted text for display
         subject_highlighted = highlight_keywords(subject)
         body_highlighted = highlight_keywords(body)
-        
+
         # Get all keywords found in both subject and body
         keywords = sorted(set(find_keywords(subject) + find_keywords(body)))
         
