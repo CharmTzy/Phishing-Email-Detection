@@ -19,12 +19,12 @@ st.markdown(
         font-size: 2rem;
         font-weight: 700;
         color: #2c3e50;
-        margin-bottom: 10px;
+     
     }
     .subtitle {
         font-size: 1.1rem;
         color: #555;
-        margin-bottom: 25px;
+       
     }
     .step-title {
         font-size: 1.3rem;
@@ -66,7 +66,7 @@ st.markdown(
         display: inline-block !important;
     }
     div.stForm button[type="submit"]:hover {
-        background-color: #c0392b !important;  /* darker red on hover */
+        background-color: #c0392b !important; 
     }
     </style>
     """,
@@ -84,8 +84,10 @@ st.markdown(
 st.markdown("<div class='step-title'>1. Enter Email Details</div>", unsafe_allow_html=True)
 
 with st.form("email_form"):
+    sender_email = st.text_input("Sender Email")
     subject = st.text_input("Email Subject")
     body = st.text_area("Email Body", height=120)
+    url = st.text_input("URL") 
     uploaded_file = st.file_uploader("Or upload email file (.eml)", type=["eml"])
     submitted = st.form_submit_button("Analyze Email", type="primary")
 
