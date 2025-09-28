@@ -8,6 +8,8 @@ from utilities import read_file, load_safe_hosts
 TRUSTED_SITES = read_file("trusted_sites.txt")      
 SAFE_URLS     = load_safe_hosts("safe_urls.txt")    
 
+print(next(iter(SAFE_URLS)))
+
 # Function to extract registrable domains from any URLs in email text
 def extract_urls(email):
     """
@@ -79,5 +81,4 @@ def URLvalidator(url):
         # Otherwise, treat as suspicious
         return False
     except:
-        # Straight up sus
         return False

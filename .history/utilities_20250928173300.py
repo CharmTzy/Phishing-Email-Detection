@@ -6,6 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 from urllib.parse import urlparse
 
+
 # Create directory if it doesn't exist
 def create_directory(path):
     if not os.path.exists(path):

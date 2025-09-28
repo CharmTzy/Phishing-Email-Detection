@@ -2,11 +2,6 @@
 import re
 from urllib.parse import urlparse
 import tldextract  # pip install tldextract
-from utilities import read_file, load_safe_hosts
-
-# Load lists once at the top
-TRUSTED_SITES = read_file("trusted_sites.txt")      
-SAFE_URLS     = load_safe_hosts("safe_urls.txt")    
 
 # Function to extract registrable domains from any URLs in email text
 def extract_urls(email):
@@ -54,30 +49,24 @@ def extract_urls(email):
 # Function to validate the url, returns true if valid, false if suspicious
 def URLvalidator(url):
     try:
-        # Prepend https:// if missing scheme
-        if "://" not in url:
-            url = "https://" + url
-
-        result = urlparse(url)
+        result = urlparse(url.strip())  # strip spaces first
 
         # Scheme must be http or https
         if result.scheme not in ("http", "https"):
             return False
 
         # Netloc must look like a domain
-        domain_pattern = re.compile(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$")
+        domain_pattern = re.compile(
+            r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+        )
 
         # If the netloc (domain part) does not match this pattern,
         # then it’s not a proper domain → treat it as phishing.
         if not domain_pattern.match(result.netloc):
-            return False  
-        
-        # Check if netloc inside the files
-        if result.netloc.lower() in SAFE_URLS or result.netloc.lower() in TRUSTED_SITES:
-            return True
+            return False
 
-        # Otherwise, treat as suspicious
-        return False
+        return True
     except:
-        # Straight up sus
         return False
+
+

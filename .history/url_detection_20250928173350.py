@@ -79,5 +79,5 @@ def URLvalidator(url):
         # Otherwise, treat as suspicious
         return False
     except:
-        # Straight up sus
+        
         return False

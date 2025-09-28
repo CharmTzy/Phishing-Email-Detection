@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
-from urllib.parse import urlparse
 
 # Create directory if it doesn't exist
 def create_directory(path):
