@@ -1,5 +1,4 @@
-# Import libraries 
-from trusted_sites import getSiteList
+from trusted_sites import getSiteList,extract_email_domain
 from edit_distance import editDistance
 from url_detection import extract_urls, URLvalidator
 from keyword_detection import keyword_score, find_keywords, highlight_keywords
@@ -23,7 +22,7 @@ def analyseEmails(email):
     body_highlighted = highlight_keywords(body)
     keywords = sorted(set(find_keywords(subject) + find_keywords(body)))
 
-    # Load trusted domains from trusted_sites.txt
+    # Load trusted sites/domains
     trustedSites = getSiteList()
     # Extract URLs from body/email text (always returns list, even if empty)
     extracted_urls = extract_urls(body) or []
@@ -34,7 +33,11 @@ def analyseEmails(email):
     # Also add the manually provided URL if present
     if url:
         emailUrls.append(url)
-
+    
+    sender = email.get("from", "")
+    senderDomain = extract_email_domain(sender)
+    if senderDomain:
+        emailUrls.append(senderDomain)
     # Prepare lists to collect results
     urlCheck = []   # Boolean results from URLvalidator
     editCheck = []  # Edit distance results vs trusted domains
@@ -56,7 +59,6 @@ def analyseEmails(email):
         False in urlCheck,                   # any URL validator failed
         any(minEditDistance[0] <= 2 for minEditDistance in editCheck)    # edit distance <= 2
     ]
-    print(f"Individual Check Results: {checks}")
     # Check the counts 
     spamVotes = sum(checks)
 

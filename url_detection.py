@@ -5,7 +5,7 @@ import tldextract # pip install tldextract
 from utilities import read_file, load_safe_hosts
 
 # Load lists once at the top
-TRUSTED_SITES = read_file("trusted_sites.txt")  # Set of trusted domains
+TRUSTED_SITES = read_file("legitimate_domains.csv")  # Set of trusted domains
 SAFE_URLS = load_safe_hosts("safe_urls.txt")    # Set of safe hostnames
 
 # Function to extract registrable domains from any URLs in email text
