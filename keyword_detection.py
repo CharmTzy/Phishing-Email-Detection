@@ -7,12 +7,7 @@ from io import StringIO
 
 nlp = spacy.load("en_core_web_sm")
 
-# Correct raw CSV URL from GitHub
-url = "https://raw.githubusercontent.com/CharmTzy/cleaned-SA-dataset/main/cleaned_SA.csv"
-
-response = requests.get(url, verify=False)
-df = pd.read_csv(StringIO(response.text))
-
+df = pd.read_csv(r"Datasets/cleaned_SA.csv")
 suspicious_keywords = []
 
 class Colors:   

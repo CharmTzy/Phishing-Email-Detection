@@ -2,85 +2,46 @@ from flask import Flask, request, jsonify
 from keyword_detection import keyword_score, find_keywords, highlight_keywords
 from flask_cors import CORS
 from url_detection import extract_urls, URLvalidator
+from all_checks import analyseEmails
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/detect_keywords', methods=['POST'])
-def detect_keywords_api():
+@app.route('/analyse_email', methods=['POST'])
+def analyse_email_api():
+    """
+    Unified API endpoint that analyses an email for phishing risk.
+    Runs all checks (keywords, highlighting, URL validation, edit distance)
+    and returns a single combined JSON result.
+    """
     try:
-        data = request.get_json()
-        subject = data.get('subject', '')
-        body = data.get('body', '')
-        
-        # Calculate the risk score
-        score = keyword_score(subject, body)
-        
-        # Determine label based on score threshold
-        label = "Phishing" if score >= 50 else "Safe"
-        
-        # Get highlighted text for display
-        subject_highlighted = highlight_keywords(subject)
-        body_highlighted = highlight_keywords(body)
+        # Get JSON input from frontend (subject, body, url)
+        data = request.get_json() or {}
+        print("Received data:", data)
+        # Run the main analysis function
+        result = analyseEmails(data)
+        print("Result:",result)
+        print(jsonify(result))
 
-        # Get all keywords found in both subject and body
-        keywords = sorted(set(find_keywords(subject) + find_keywords(body)))
-        
-        return jsonify({
-            "score": score,
-            "label": label,
-            "keywords": keywords,
-            "subject_highlighted": subject_highlighted,
-            "body_highlighted": body_highlighted
-        })
-    
+        # Return results as JSON for frontend to render
+        return jsonify(result)
     except Exception as e:
+        # Return a safe default JSON in case of error
         return jsonify({
             "error": str(e),
-            "score": 0,
-            "label": "Error",
+            "final_label": "Error",         # error fallback
+            "overall_score": 0,             # default score
+            "spam_votes": 0,                # no checks passed
+            "keyword_score": 0,
+            "keyword_label": "Error",
             "keywords": [],
             "subject_highlighted": "",
-            "body_highlighted": ""
-        }), 500
+            "body_highlighted": "",
+            "urls": [],
+            "urlCheck": [],
+            "editCheck": []
+        }) #, 500
 
-@app.route('/validate_url', methods=['POST'])
-def validate_url_api():
-    try:
-        data = request.get_json()
-        url_input = data.get('url', '')   
-        email_body = data.get('body', '') 
-
-        urls_to_check = []
-
-        # If user provided a URL in the input field, use it
-        if url_input:
-            urls_to_check.append(url_input)
-
-        # Extract any URLs from the email body
-        extracted = extract_urls(email_body)
-        if extracted:
-            urls_to_check.extend(extracted)
-
-        # Remove duplicates
-        urls_to_check = list(set(urls_to_check))
-
-        # Validate all URLs
-        results = {}
-        for u in urls_to_check:
-            results[u] = "Safe" if URLvalidator(u) else "Suspicious"
-
-        return jsonify({
-            "urls_checked": urls_to_check,
-            "results": results
-        })
-    
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "urls_checked": [],
-            "results": {}
-        }), 500
-    
+  
 if __name__ == '__main__':
     app.run(debug=True)

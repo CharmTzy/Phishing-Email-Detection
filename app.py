@@ -105,16 +105,18 @@ with st.form("email_form"):
         else:
             split_parts = re.split(r"\r?\n\r?\n", eml_text)
             body = "\n\n".join(split_parts[1:]).strip() if len(split_parts) > 1 else body
+            
 # ===== Step 2: Analysis Results =====
 if submitted:
+    print(f"Submitted: subject='{subject}', body length={body}, url='{url}'")
     if not subject and not body and not url:
         st.error("⚠️ Please provide either subject/body, URL, or upload an email file.")
     else:
         try:
-            # Call keyword detection API
+            # Call unified backend
             response = requests.post(
-                "http://127.0.0.1:5000/detect_keywords",
-                json={"subject": subject, "body": body},
+                "http://127.0.0.1:5000/analyse_email",
+                json={"subject": subject, "body": body, "url": url},
                 timeout=10
             )
             response.raise_for_status()
@@ -122,25 +124,25 @@ if submitted:
 
             st.markdown("<div class='step-title'>2. Analysis Results</div>", unsafe_allow_html=True)
 
-            # Result Summary (Risk Score + Label)
+            # Summary
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(
-                    f"<div class='result-card'><span>⚖️</span><br>Risk Score<br><strong>{data['score']}</strong></div>",
+                    f"<div class='result-card'><span>⚖️</span><br>Overall Score<br><strong>{data['overall_score']}</strong></div>",
                     unsafe_allow_html=True
                 )
             with col2:
                 st.markdown(
-                    f"<div class='result-card'><span>🏷️</span><br>Label<br><strong>{data['label']}</strong></div>",
+                    f"<div class='result-card'><span>🏷️</span><br>Final Label<br><strong>{data['final_label']}</strong></div>",
                     unsafe_allow_html=True
                 )
 
-            # Detailed Breakdown
+            # Detailed breakdown
             st.markdown("### Detailed Breakdown")
-            st.markdown(f"**Email Subject:** {data['subject_highlighted']}", unsafe_allow_html=True)
-            st.markdown(f"**Email Body:**\n\n{data['body_highlighted']}", unsafe_allow_html=True)
+            st.markdown(f"**Keyword Score:** {data['keyword_score']} ({data['keyword_label']})")
+            st.markdown(f"**Spam Votes:** {data['spam_votes']} / 5")
 
-            # Suspicious Keywords
+            # Keywords
             st.markdown("---")
             st.markdown("**Suspicious Keywords:**")
             if data['keywords']:
@@ -148,22 +150,25 @@ if submitted:
             else:
                 st.markdown("✅ None found")
 
-            # ===== URL Detection =====
+            # Highlighted subject/body
+            st.markdown("---")
+            st.markdown("**Email Subject (highlighted):**")
+            st.markdown(data['subject_highlighted'], unsafe_allow_html=True)
+            st.markdown("**Email Body (highlighted):**")
+            st.markdown(data['body_highlighted'], unsafe_allow_html=True)
+
+            # URL Analysis
             st.markdown("---")
             st.markdown("**URL Analysis:**")
-            url_response = requests.post(
-                "http://127.0.0.1:5000/validate_url",
-                json={"url": url, "body": body},
-                timeout=10
-            )
-            url_response.raise_for_status()
-            url_data = url_response.json()
+            if data['urls']:
+                for i, u in enumerate(data['urls']):
+                    safe = data.get("urlCheck", [])[i] if i < len(data.get("urlCheck", [])) else False
+                    status = "Safe ✅" if safe else "Suspicious ❌"
+                    st.markdown(f"- {u} → {status}")
 
-            if url_data.get("urls_checked"):
-                for u in url_data["urls_checked"]:
-                    status = url_data["results"].get(u, "Unknown")
-                    color = "#28a745" if status == "Safe" else "#d9534f"
-                    st.markdown(f"<span style='color:{color}; padding:4px 6px; border-radius:4px;'>{u} → {status}</span>", unsafe_allow_html=True)
+                    if i < len(data.get("editCheck", [])):
+                        dist, closest = data["editCheck"][i]
+                        st.markdown(f"   ↳ Closest Trusted: {closest} (distance {dist})")
             else:
                 st.markdown("✅ No URLs found")
 
