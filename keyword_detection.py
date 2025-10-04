@@ -2,8 +2,6 @@ import pandas as pd
 import string
 import spacy
 import re
-import requests
-from io import StringIO
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -14,17 +12,40 @@ class Colors:
     GREEN = '\033[92m'
     RESET = '\033[0m'
     
-# Extract nouns and proper nouns from text
+common_words = {
+    "email", "mail", "message", "information", "account", "service", "time", "day", 
+    "please", "thank", "thanks", "hello", "hi", "dear", "sincerely", "regards", 
+    "contact", "support", "help", "team", "customer", "service", "company", "business",
+    "sun", "mon", "tue", "wed", "thu", "fri", "sat",
+    "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    "seconds", "minutes", "hours", "days", "months", "years"
+}
+
+positive_words = {
+    "success", "congratulations", "approved", "verified", "secure", "protected", 
+    "safe", "legitimate", "authentic", "genuine", "official", "valid", "trusted", 
+    "authorized", "confirmed", "verified", "guaranteed", "reliable", "honest"
+}
+
 def extract_keywords(text):
     text = text.translate(str.maketrans('', '', string.punctuation))
     doc = nlp(text)
-    return list({token.text.lower() for token in doc if token.pos_ in ["NOUN", "PROPN"]})
+    keywords = {token.text.lower() for token in doc if token.pos_ in ["NOUN", "PROPN"]}
+    
+    # Filter out common and positive words
+    filtered_keywords = keywords - common_words - positive_words
+    
+    return list(filtered_keywords)
 
 # Calculate risk score for spam
 def keyword_score(subject, body):
     text = f"{subject} {body}"
     keywords = extract_keywords(text)
     keyword_counts = {}
+    
+    # Empty the suspicious_keywords list before starting new operations
+    global suspicious_keywords
+    suspicious_keywords = []
 
     spam_df = df[df["label"] == 1]
 
@@ -35,8 +56,8 @@ def keyword_score(subject, body):
         
         for kw in keywords:
             # Subject hits → weight 2
-            subj_hits = sub_df["subject"].str.contains(kw, case=False, na=False)
-            subj_total = subj_hits.sum() * 2  # subject has higher weight
+            subj_hits = sub_df["subject"].str.contains(r'\b' + re.escape(kw) + r'\b', case=False, na=False, regex=True)
+            subj_total = subj_hits.sum()
             
             # Body hits → check first 100 words separately
             body_words = sub_df["body"].str.split()
@@ -63,9 +84,8 @@ def keyword_score(subject, body):
     return round(score_spam, 2)  # final risk score
 
 # Find keywords in a text that are considered suspicious
-def find_keywords(text):
-    keywords_in_text = extract_keywords(text)
-    return [kw for kw in keywords_in_text if kw]
+def find_keywords():
+    return [kw for kw in suspicious_keywords if kw]
 
 # Highlight keywords in HTML
 def highlight_keywords(text):
