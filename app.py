@@ -116,7 +116,7 @@ if submitted:
             # Call unified backend
             response = requests.post(
                 "http://127.0.0.1:5000/analyse_email",
-                json={"subject": subject, "body": body, "url": url},
+                json={"sender_email": sender_email, "subject": subject, "body": body, "url": url},
                 timeout=10
             )
             response.raise_for_status()
@@ -139,6 +139,14 @@ if submitted:
 
             # Detailed breakdown
             st.markdown("### Detailed Breakdown")
+            st.markdown(f"**Email Domain:** {data['email_data']['domain']}")
+            st.markdown(f"**Category:** {data['email_data']['category']}")
+            st.markdown(f"**Legitimacy Score:** {data['email_data']['legitimacy_score']}")
+            st.markdown(f"**Total Occurrences:** {data['email_data']['total_occurrences']}")
+            st.markdown(f"**No. of times shown in Spam Inbox:** {data['email_data']['in_spam']}")
+            st.markdown(f"**No. of times shown in Safe Inbox:** {data['email_data']['in_ham']}")
+            st.markdown(f"**Sources:** {data['email_data']['sources']}")
+
             st.markdown(f"**Keyword Score:** {data['keyword_score']} ({data['keyword_label']})")
             st.markdown(f"**Spam Votes:** {data['spam_votes']} / 5")
 

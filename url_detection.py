@@ -96,6 +96,7 @@ def URLvalidator(url):
 
         # Check if registrable domain is in trusted sites
         if registrable_domain and registrable_domain in TRUSTED_SITES:
+            print("This is working")
             return True
             
         # Check if registrable domain is in safe URLs  

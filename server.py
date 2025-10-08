@@ -29,7 +29,8 @@ def analyse_email_api():
         # Return a safe default JSON in case of error
         return jsonify({
             "error": str(e),
-            "final_label": "Error",         # error fallback
+            "final_label": "Error",
+            "email_data": {},
             "overall_score": 0,             # default score
             "spam_votes": 0,                # no checks passed
             "keyword_score": 0,
