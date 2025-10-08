@@ -2,8 +2,11 @@ domain,legitimacy_score,total_occurrences,in_spam,in_ham,sources,category
 linux.ie,100,112,18,94,"from, urls",legitimate
 sourceforge.net,100,477,183,294,"from, urls",legitimate
 google.com,100,17,4,13,urls,legitimate
+render.com,100,17,4,13,urls,legitimate
+paypal.com,100,17,4,13,urls,legitimate
 debian.org,100,2,1,1,from,legitimate
 redhat.com,100,168,0,168,"from, urls",legitimate
+mohh.com.sg,100,168,0,168,"from, urls",legitimate
 kernel.org,100,1,0,1,,legitimate
 linux.ieon,100,2,0,2,,legitimate
 gnu.org,100,2,0,2,urls,legitimate

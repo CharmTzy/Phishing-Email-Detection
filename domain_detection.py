@@ -8,6 +8,10 @@ def check_domain_in_csv(email: str) -> dict:
     
     Returns a dictionary with column titles as keys and corresponding data as values.
     If the domain is not found, returns 'Not Found' for each value.
+    
+    Applies additional classification criteria:
+    - Domains with low occurrence (≤ 5) are treated with caution
+    - Domains with legitimacy score < 90 and low occurrence are classified as suspicious
     """
     # Extract domain from email
     try:
@@ -57,7 +61,8 @@ def check_domain_in_csv(email: str) -> dict:
         
         for row in reader:
             if row["domain"].strip().lower() == domain:
-                return {
+                # Apply enhanced classification logic
+                result = {
                     "domain": row["domain"],
                     "legitimacy_score": row["legitimacy_score"],
                     "total_occurrences": row["total_occurrences"],
@@ -66,6 +71,20 @@ def check_domain_in_csv(email: str) -> dict:
                     "sources": row["sources"],
                     "category": row["category"]
                 }
+                
+                # Apply stricter criteria for low-occurrence domains
+                try:
+                    legitimacy_score = int(row["legitimacy_score"])
+                    total_occurrences = int(row["total_occurrences"])
+                    
+                    # Reclassify low-occurrence domains with moderate legitimacy scores
+                    if total_occurrences <= 5 and legitimacy_score < 90:
+                        result["category"] = "suspicious"
+                except (ValueError, TypeError):
+                    # If conversion fails, keep original classification
+                    pass
+                
+                return result
     
     # Domain not found
     return {

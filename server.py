@@ -17,11 +17,8 @@ def analyse_email_api():
     try:
         # Get JSON input from frontend (subject, body, url)
         data = request.get_json() or {}
-        print("Received data:", data)
         # Run the main analysis function
         result = analyseEmails(data)
-        print("Result:",result)
-        print(jsonify(result))
 
         # Return results as JSON for frontend to render
         return jsonify(result)

@@ -93,8 +93,18 @@ with st.form("email_form"):
 
     if uploaded_file is not None:
         eml_text = uploaded_file.read().decode("utf-8", errors="ignore")
+        
+        # Extract subject
         subject_match = re.search(r"^Subject:\s*(.*)$", eml_text, re.MULTILINE)
         subject = subject_match.group(1) if subject_match else subject
+        
+        # Extract sender email if the input field is empty
+        if not sender_email:
+            from_match = re.search(r"^From:.*?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}).*$", eml_text, re.MULTILINE | re.IGNORECASE)
+            if from_match:
+                sender_email = from_match.group(1)
+        
+        # Extract body
         plain_text_match = re.search(
             r"Content-Type:\s*text/plain.*?(\r?\n\r?\n)(.*?)(?=\r?\n--|$)",
             eml_text,

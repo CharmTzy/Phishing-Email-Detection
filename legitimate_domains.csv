@@ -7,6 +7,8 @@ redhat.com,100,168,0,168,"from, urls",legitimate
 facebook.com,100,168,0,168,"from, urls",legitimate
 instagram.com,100,168,0,168,"from, urls",legitimate
 github.com,100,168,0,168,"from, urls",legitimate
+render.com,100,168,0,168,"from, urls",legitimate
+paypal.com,100,168,0,168,"from, urls",legitimate
 kernel.org,100,1,0,1,,legitimate
 linux.ieon,100,2,0,2,,legitimate
 gnu.org,100,2,0,2,urls,legitimate
