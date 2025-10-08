@@ -88,7 +88,7 @@ def analyseEmails(email):
         (keywordLabel == "Spam"),            # keyword detection label
         (keywordScore >= 70),                # high risk keyword score
         False in urlCheck,                   # any URL validator failed
-        any(minEditDistance[0] <= 2 for minEditDistance in editCheck)    # edit distance <= 2
+        any((minEditDistance[0] <= 2) and (minEditDistance[0]!=0) for minEditDistance in editCheck)    # edit distance <= 2
     ]
     # Check the counts 
     spamVotes = sum(checks)
