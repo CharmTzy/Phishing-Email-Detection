@@ -1,5 +1,7 @@
-cleaned_SA.csv
 emails.csv
 __pycache__
-Datasets/
+Datasets/cleaned enron
+Datasets/cleaned spamAssassin
+Datasets/raw enron
+Datasets/raw spamAssassin
 .DS_Store
