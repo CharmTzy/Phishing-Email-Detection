@@ -25,11 +25,24 @@ def write_to_file(file_path, content):
 # Reads a text file and returns a set of cleaned lines.
 def read_file(filepath):
     readText = set() # Auto remove duplicates
-    with open(filepath, 'r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip().lower()
-            if line: # only add non-empty lines
-                readText.add(line)
+    
+    # Check if it's a CSV file
+    if filepath.endswith('.csv'):
+        import csv
+        with open(filepath, 'r', encoding='utf-8') as file:
+            csv_reader = csv.DictReader(file)
+            for row in csv_reader:
+                if 'domain' in row:
+                    domain = row['domain'].strip().lower()
+                    if domain:  # only add non-empty domains
+                        readText.add(domain)
+    else:
+        # Regular text file processing
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in file:
+                line = line.strip().lower()
+                if line:  # only add non-empty lines
+                    readText.add(line)
     return readText
 
 # Function to load the url and extract the REGISTRABLE DOMAIN from the txt file
