@@ -26,7 +26,9 @@ def editDistance(siteList, site):
             prev, cur = cur, prev  # Update prev to be the current row, and cur to be the new empty row
 
         # The final value in prev[m] is the minimum number of operations required
+        #Stores the website with the smallest edit distance
         if prev[m]<minEditDistance:
             minEditDistance=prev[m]
             closestMatch=s
+    #Returns the smallest edit distance and the correspondinf website
     return [minEditDistance,closestMatch]
