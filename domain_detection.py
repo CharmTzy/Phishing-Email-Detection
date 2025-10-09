@@ -16,6 +16,7 @@ def check_domain_in_csv(email: str) -> dict:
     # Extract domain from email
     try:
         domain = email.split('@')[1].strip().lower()
+        print(f"Extracted domain: {domain}")
     except IndexError:
         # Invalid email format
         return {
