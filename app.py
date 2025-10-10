@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import re
+
 #slide 1
 st.set_page_config(page_title="Phishing Email Keyword Detection", page_icon=":shield:", layout="wide")
 
@@ -128,7 +129,7 @@ if submitted:
             response = requests.post(
                 "http://127.0.0.1:5000/analyse_email",
                 json={"sender_email": sender_email, "subject": subject, "body": body, "url": url},
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             data = response.json()
