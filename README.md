@@ -30,13 +30,19 @@ It aims to help users understand how linguistic and structural elements in email
 ## 3. Project Structure
 Phishing-Email-Detection/
 │
-├── main.py                # Main execution file
-├── set_up.py              # Initializes trusted URL database
-├── app.py                 # Streamlit interface
-├── requirements.txt       # List of dependencies
+├── main.py # Main execution file for the phishing detection system
+├── set_up.py # Initializes the trusted URL database and generates safe_urls.txt
+├── app.py # Streamlit web interface for interactive testing
+├── requirements.txt # List of required dependencies
+│
 ├── Datasets/
-│   ├── cleaned_SA.csv     # Input dataset
-└── README.md              # Project documentation
+│ └── cleaned_SA.csv # Input dataset used for analysis
+│
+│── keyword_analysis.py # Handles keyword scoring and classification logic
+│── url_analysis.py # Checks URL patterns and structure for suspicious behavior
+│── edit_distance.py # Compares URLs against trusted domains to detect impersonations
+│
+└── README.md # Project documentation and description
 
 This structure separates the main logic, data, and output clearly, making the project easy to navigate and maintain.
 
@@ -66,12 +72,16 @@ The system generates several outputs that contribute to phishing detection:
 Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
 
-python
+```python
 python set_up.py
+```
 
 This creates `a.txt` file of safe URLs based on data from the database. You may change the file path on line 4 of set_up.py to use different database. 
-```
+
+---
+
 ### Commands to run the code 
 For terminal use:
 ```bash
@@ -82,6 +92,8 @@ For Streamlit interface:
 ```bash
 streamlit run app.py
 ```
+
+---
 
 ## 6. Input and Output?
 
