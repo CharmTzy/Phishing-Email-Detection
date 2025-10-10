@@ -1,4 +1,5 @@
 def editDistance(siteList, site):
+    #checks a site against a trusted site list to find the smallest edit distance and matching website
     minEditDistance=99
     closestMatch=""
     for s in siteList:
@@ -30,5 +31,5 @@ def editDistance(siteList, site):
         if prev[m]<minEditDistance:
             minEditDistance=prev[m]
             closestMatch=s
-    #Returns the smallest edit distance and the correspondinf website
+    #Returns the smallest edit distance and the corresponding website
     return [minEditDistance,closestMatch]
