@@ -26,7 +26,6 @@ def extract_base_domain(url):
             base_domain = '.'.join(parts[-2:])
     else:
         base_domain = domain
-        #GMAIL.COM
         
     return base_domain
 
