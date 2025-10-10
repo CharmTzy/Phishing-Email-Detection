@@ -97,8 +97,6 @@ streamlit run app.py
 
 ---
 
-## 6. Input and Output?
-
 ## How it works (Brief Explanation)
 1. Preprocessing:
    Cleans and standardizes email text, removing HTML tags and irrelevant characters.
@@ -121,8 +119,14 @@ streamlit run app.py
 7. Frontend Visualization:
    A Streamlit-based interface displays the results, highlights risky terms, and explains why an email is flagged.
 
-## 7. Results and Insights
+## 6. Results and Insights
 
-## 8. License
+The system produces several key outputs to determine whether an email is phishing or legitimate. The Final Label provides the overall result, indicating whether the email is identified as a phishing attempt or a legitimate message. The Overall Score represents a numerical rating of the email’s safety, where a lower score signifies a safer email. Supporting this, the Spam Votes show how many detection checks flagged the email as suspicious, offering a breakdown of how the overall rating was derived.
+
+The Keyword Score measures the frequency of suspicious or phishing-related terms within the email’s content, while the Keyword Label classifies the message as spam or ham based solely on that score. The system also lists all Suspicious Keywords detected and visually presents them within the Highlighted Body and Subject, allowing users to see exactly where these keywords appear for better context and understanding.
+
+In addition to text analysis, the system examines all links found in the email. The URL section lists these links, while the URL Check identifies any that appear suspicious, such as those containing excessive numbers or irregular patterns. The Edit Distance Check then compares each URL against a database of trusted websites to detect possible impersonation attempts. It shows the calculated edit distance, indicating how similar the suspicious URL is to a legitimate one and highlights the closest trusted match. Together, these outputs provide a detailed and transparent evaluation, offering users a clear view of how the system determines whether an email poses a phishing risk.
+
+## 7. License
 This project was developed for academic purposes under the SIT INF1002: Programming Fundamentals module.
 All content is intended for educational use only.
