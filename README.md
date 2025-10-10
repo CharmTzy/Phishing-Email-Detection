@@ -28,6 +28,7 @@ It aims to help users understand how linguistic and structural elements in email
 ---
 
 ## 3. Project Structure
+```
 Phishing-Email-Detection/
 │
 ├── main.py # Main execution file for the phishing detection system
@@ -43,6 +44,7 @@ Phishing-Email-Detection/
 │── edit_distance.py # Compares URLs against trusted domains to detect impersonations
 │
 └── README.md # Project documentation and description
+```
 
 This structure separates the main logic, data, and output clearly, making the project easy to navigate and maintain.
 
