@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import re
-
+#slide 1
 st.set_page_config(page_title="Phishing Email Keyword Detection", page_icon=":shield:", layout="wide")
 
 # ===== Custom CSS =====
@@ -82,7 +82,7 @@ st.markdown(
 
 # ===== Step 1: Enter Email Details =====
 st.markdown("<div class='step-title'>1. Enter Email Details</div>", unsafe_allow_html=True)
-
+#slide 2
 with st.form("email_form"):
     sender_email = st.text_input("Sender Email")
     subject = st.text_input("Email Subject")
@@ -124,6 +124,7 @@ if submitted:
     else:
         try:
             # Call unified backend
+            #slide 3
             response = requests.post(
                 "http://127.0.0.1:5000/analyse_email",
                 json={"sender_email": sender_email, "subject": subject, "body": body, "url": url},
