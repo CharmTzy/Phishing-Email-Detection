@@ -100,6 +100,26 @@ streamlit run app.py
 ## 6. Input and Output?
 
 ## How it works (Brief Explanation)
+1. Preprocessing:
+   Cleans and standardizes email text, removing HTML tags and irrelevant characters.
+
+2. Keyword Detection & Scoring:
+   Identifies suspicious words (e.g., “urgent,” “verify,” “password”) and calculates a score based on their frequency and       position.
+
+3. Domain Legitimacy Check:
+   Validates sender domains against a trusted domain list using a reference CSV file.
+
+4. URL Extraction & Validation:
+   Detects URLs within email content and checks whether they belong to known safe domains.
+
+5. Edit Distance Analysis:
+   Uses the Levenshtein distance algorithm to detect lookalike domains (e.g., paypa1.com vs paypal.com).
+
+6. Unified Risk Scoring:
+   Aggregates results from all modules (keyword, URL, edit distance, domain) to calculate a total phishing risk score.
+
+7. Frontend Visualization:
+   A Streamlit-based interface displays the results, highlights risky terms, and explains why an email is flagged.
 
 ## 7. Results and Insights
 
