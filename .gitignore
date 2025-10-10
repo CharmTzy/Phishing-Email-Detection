@@ -5,3 +5,4 @@ Datasets/cleaned spamAssassin
 Datasets/raw enron
 Datasets/raw spamAssassin
 .DS_Store
+.history/

@@ -1,96 +1,94 @@
-# Phishing-Email-Detection
-The objective of this project is to design and implement a rule-based system to detect phishing emails. Students will write Python programs to analyze emails using various string processing and logical techniques, practicing problem decomposition and programming fundamentals.
+# Project Title: Phishing Email Detection
 
-After pulling from the repository, run the following command "python set_up.py", this will create the txt file of safe urls based on data extracted from the database. A different database can be used by changing the file path on line 4.
+## Group Members
+|     Name     | Student ID |
+|--------------|------------|
+| Lam Jing Hai |   2501051  |
+|  Lim Ze Kai  |   2501273  |
+| Wai Yan Aung |   2502245  |
+| Teng Tze Hui |   2502437  |
+| Chia Yu Wei  |   2503191  |
 
-🧾 README Structure (Recommended)
-1. Project Title and Overview
+**Module:** SIT INF1002 – Programming Fundamentals  
+**Class:** Lab-P1 - 1  
+**Semester:** AY2024/2025 Trimester [1]  
+**Group Number:** 5
 
-A short description of your project, e.g.
+## 1. Project Title and Overview
+**Phishing Email Detection** – A Python-based tool designed to identify phishing emails through rule-based analysis.  
+The system examines email text, keywords, and URLs using string-processing and logical checks to detect suspicious patterns such as deceptive wording, irregular links, and domain impersonation.  
+This project reinforces fundamental programming skills, problem decomposition, and analytical thinking in Python.
 
-“Phishing Email Detection System – A Python-based tool that analyzes emails using keyword frequency, URL checks, and edit distance to identify potential phishing attempts.”
+---
 
-2. Objectives / Purpose
+## 2. Objectives / Purpose
+The objective of this project is to design and implement a **rule-based system** that accurately detects phishing emails by combining **content-based** and **URL-based** techniques.  
+It aims to help users understand how linguistic and structural elements in emails—like specific keywords, strange URLs, or mimic domains—can reveal potential phishing threats.
 
-Explain the goal of the project in 2–3 lines:
+---
 
-“The purpose of this project is to detect phishing emails by combining content-based and URL-based analysis techniques. It provides insights into suspicious keywords, risky links, and impersonation attempts.”
+## 3. Project Structure
+Phishing-Email-Detection/
+│
+├── main.py                # Main execution file
+├── set_up.py              # Initializes trusted URL database
+├── app.py                 # Streamlit interface
+├── requirements.txt       # List of dependencies
+├── Datasets/
+│   ├── cleaned_SA.csv     # Input dataset
+└── README.md              # Project documentation
 
-3. System Features
+This structure separates the main logic, data, and output clearly, making the project easy to navigate and maintain.
 
-List and briefly explain the main outputs (you already have these written):
+---
 
-Final Label
+## 4. System Features
+The system generates several outputs that contribute to phishing detection:
 
-Overall Score
+- **Final Label:** Classification result — phishing or legitimate.  
+- **Overall Score:** Numerical safety rating (lower = safer).  
+- **Spam Votes:** Number of checks that flagged the email as suspicious.  
+- **Keyword Score and Label:** Frequency of phishing-related keywords and spam/ham classification.  
+- **Suspicious Keywords:** List of flagged words.  
+- **Highlighted Body and Subject:** Email text with suspicious terms highlighted.  
+- **URL Check:** Identifies suspicious or irregular URLs.  
+- **Edit Distance Check:** Compares URLs with trusted domains to detect impersonations.
 
-Spam Votes
+---
 
-Keyword Score and Label
+## 5. Installation / Setup Instructions
 
-Suspicious Keywords
+### Prerequisites
+- Python 3.9 or higher  
+- Required libraries: `pandas`, `re`, `difflib`, `streamlit`  
 
-Highlighted Body and Subject
-
-URL Check
-
-Edit Distance Check
-
-(You can paste your concise paragraph here.)
-
-4. Installation / Setup Instructions
-
-Explain how to run the program:
-
-Prerequisites (e.g. Python 3.9+, pandas, sklearn, Streamlit)
-
-Installation steps (use code blocks):
-
+### Setup
+Install dependencies:
+```bash
 pip install -r requirements.txt
 
+python
+python set_up.py
 
-How to run:
-
+This creates `a.txt` file of safe URLs based on data from the database. You may change the file path on line 4 of set_up.py to use different database. 
+```
+### Commands to run the code 
+For terminal use:
+```bash
 python main.py
+```
 
-
-or (if using Streamlit)
-
+For Streamlit interface:
+```bash
 streamlit run app.py
+```
 
-5. Input and Output
+## 6. Input and Output?
 
-Describe the expected input and what output looks like:
+## How it works (Brief Explanation)
 
-Input: CSV file or email dataset with fields like subject, body, URLs.
+## 7. Results and Insights
 
-Output: JSON, CSV, or on-screen summary showing scores, labels, and highlighted text.
-
-(Optional: include one short example of an email input and output table.)
-
-6. How It Works (Brief Explanation)
-
-Explain the logic flow in a few lines:
-
-“The system processes each email through preprocessing, keyword scoring, URL analysis, and edit distance comparison with trusted domains. It aggregates results from multiple checks to produce an overall spam score and final classification.”
-
-7. Sample Results / Screenshot
-
-Include 1–2 figures or screenshots (e.g., a sample detection result or Streamlit interface).
-Label them clearly (e.g., “Figure 1: Example of highlighted phishing email”).
-
-8. Limitations / Future Work
-
-A few lines to show reflection:
-
-“The system currently relies on rule-based checks and may flag legitimate promotional emails as phishing. Future versions could integrate machine learning models for improved accuracy.”
-
-9. Contributors
-
-List team members and roles briefly (e.g., data cleaning, model design, UI, documentation).
-
-10. License (Optional)
-
-If required, mention something simple like:
-
-“This project is developed for academic purposes under the SIT INF1002 module.”
+## 8. License
+This project was developed for academic purposes under the SIT INF1002: Programming Fundamentals module.
+All content is intended for educational use only.
