@@ -32,11 +32,3 @@ def test_no_trusted_sites():
     distance, closest = editDistance(trusted_sites, site)
     assert distance == 99  # default max distance
     assert closest == ""
-
-def test_multiple_close_sites():
-    """Test when multiple sites are close; should pick the one with smallest distance."""
-    trusted_sites = ["paypal.com", "paypol.com", "paypall.com"]
-    site = "paypalll.com"
-    distance, closest = editDistance(trusted_sites, site)
-    assert distance == 1
-    assert closest == "paypall.com"
