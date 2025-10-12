@@ -85,6 +85,10 @@ Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+Run set_up.py
+```
+python set_up.py
+```
 
 ---
 
