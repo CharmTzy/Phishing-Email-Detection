@@ -37,17 +37,20 @@ It aims to help users understand how linguistic and structural elements in email
 ```
 Phishing-Email-Detection/
 │
-├── main.py # Main execution file for the phishing detection system
+├── server.py # Main execution file for the phishing detection system
 ├── set_up.py # Initializes the trusted URL database and generates safe_urls.txt
+│── trusted_sites.py # Generates the legitimate_domains.csv and the domain_analysis_full.csv for email domains
 ├── app.py # Streamlit web interface for interactive testing
 ├── requirements.txt # List of required dependencies
 │
 ├── Datasets/
 │ └── cleaned_SA.csv # Input dataset used for analysis
 │
-│── keyword_analysis.py # Handles keyword scoring and classification logic
-│── url_analysis.py # Checks URL patterns and structure for suspicious behavior
-│── edit_distance.py # Compares URLs against trusted domains to detect impersonations
+│── keyword_detection.py # Handles keyword scoring and classification logic
+│── url_detection.py # Checks URL patterns and structure for suspicious structures
+│── edit_distance.py # Compares URLs against trusted websites to detect impersonations
+│── domain_detection.py # Compares email domains against legitimate domains
+│── all_checks.py # Consolidates all other phishing logic into one file
 │
 └── README.md # Project documentation and description
 ```
@@ -85,9 +88,10 @@ Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-Run set_up.py
+Run set up files
 ```
 python set_up.py
+trusted_sites.py
 ```
 
 ---
