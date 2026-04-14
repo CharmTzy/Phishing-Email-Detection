@@ -41,6 +41,16 @@ def test_urlvalidator_safe_urls():
     assert url_detection.URLvalidator("safe.example.com") is True
     assert url_detection.URLvalidator("trusted.site.com") is True
 
+def test_analyze_url_unknown_valid_domain():
+    result = url_detection.analyze_url("company-example.com")
+    assert result["status"] == "unknown"
+    assert result["is_suspicious"] is False
+
+def test_analyze_url_suspicious_ip_address():
+    result = url_detection.analyze_url("http://192.168.1.10/login")
+    assert result["status"] == "suspicious"
+    assert result["is_suspicious"] is True
+
 def test_urlvalidator_untrusted():
     assert url_detection.URLvalidator("malicious.com") is False
     assert url_detection.URLvalidator("http://unknown.site") is False

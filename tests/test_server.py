@@ -30,6 +30,9 @@ def test_analyse_email_valid_input(client):
     assert "overall_score" in data
     assert isinstance(data["spam_votes"], int)
     assert "keyword_score" in data
+    assert "model_score" in data
+    assert "model_probability" in data
+    assert "reasons" in data
     assert "urls" in data
     assert isinstance(data["urlCheck"], list)
     assert isinstance(data["editCheck"], list)
@@ -45,6 +48,7 @@ def test_analyse_email_missing_fields(client):
     assert response.status_code == 200
     assert "final_label" in data
     assert data["final_label"] in ["Safe", "Spam", "Error"]
+    assert "model_prediction" in data
 
 
 def test_analyse_email_empty_body(client):
@@ -57,6 +61,7 @@ def test_analyse_email_empty_body(client):
     assert response.status_code == 200
     assert "final_label" in data
     assert "overall_score" in data
+    assert "model_probability" in data
 
 
 def test_analyse_email_invalid_json(client):
@@ -71,6 +76,7 @@ def test_analyse_email_invalid_json(client):
     assert "error" in data
     assert data["final_label"] == "Error"
     assert data["overall_score"] == 0
+    assert data["model_prediction"] == "Error"
 
 
 def test_analyse_email_phishing_url(client):
@@ -89,4 +95,5 @@ def test_analyse_email_phishing_url(client):
     assert response.status_code == 200
     assert "final_label" in data
     assert data["final_label"] in ["Spam", "Safe"]
+    assert "checks_breakdown" in data
     assert isinstance(data["editCheck"], list)

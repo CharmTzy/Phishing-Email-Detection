@@ -37,8 +37,9 @@ def test_check_non_existing_domain(monkeypatch):
     monkeypatch.setattr("os.path.isfile", lambda path: True)
 
     result = check_domain_in_csv("user@unknown.com")
-    assert result["domain"] == "Not Found"
-    assert result["category"] == "Not Found"
+    assert result["domain"] == "unknown.com"
+    assert result["category"] == "unknown"
+    assert result["total_occurrences"] == 0
 
 def test_invalid_email(monkeypatch):
     """Check behavior when an invalid email is passed."""
@@ -55,5 +56,5 @@ def test_missing_csv_file(monkeypatch):
     monkeypatch.setattr("os.path.isfile", lambda path: False)
 
     result = check_domain_in_csv("user@example.com")
-    assert result["domain"] == "Not Found"
-    assert result["category"] == "Not Found"
+    assert result["domain"] == "example.com"
+    assert result["category"] == "unknown"

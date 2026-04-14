@@ -1,3 +1,13 @@
+---
+title: Phishing Email Detection
+emoji: 🛡️
+colorFrom: blue
+colorTo: cyan
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Project Title: Phishing Email Detection
 
 ## Group Members
@@ -19,16 +29,16 @@
 
 ## 1. Project Title and Overview
 
-**Phishing Email Detection** – A Python-based tool designed to identify phishing emails through rule-based analysis.  
-The system examines email text, keywords, and URLs using string-processing and logical checks to detect suspicious patterns such as deceptive wording, irregular links, and domain impersonation.  
+**Phishing Email Detection** – A Python-based tool designed to identify phishing emails through a trained machine-learning model plus supporting security checks.  
+The system now examines email text, sender domains, keywords, and URLs using a saved phishing classifier together with logical checks to detect suspicious wording, irregular links, and domain impersonation.  
 This project reinforces fundamental programming skills, problem decomposition, and analytical thinking in Python.
 
 ---
 
 ## 2. Objectives / Purpose
 
-The objective of this project is to design and implement a **rule-based system** that accurately detects phishing emails by combining **content-based** and **URL-based** techniques.  
-It aims to help users understand how linguistic and structural elements in emails—like specific keywords, strange URLs, or mimic domains—can reveal potential phishing threats.
+The objective of this project is to design and implement a **model-driven phishing detector** that accurately identifies suspicious emails by combining **machine learning**, **content-based analysis**, and **URL/domain checks**.  
+It aims to help users understand how linguistic and structural elements in emails, like specific keywords, strange URLs, sender-domain trust, or mimic domains, can reveal phishing threats.
 
 ---
 
@@ -90,19 +100,36 @@ pip install -r requirements.txt
 
 ### Commands to run the code
 
-In this project, we need to run Frontend Streamlit and Flask server separately.
-Please run both these command lines in the separate terminal to see the full features.
+In this project, we run model training once, then start the Flask backend and Streamlit frontend in separate terminals.
+
+Train or retrain the saved model:
+
+```bash
+python3 train_model.py --force
+```
+
+This creates the saved model artifact in `models/`.
+
+Then run the backend and frontend:
 
 For Flask Server:
 
 ```bash
-python server.py
+python3 server.py
 ```
 
 For Streamlit interface:
 
 ```bash
 streamlit run app.py
+```
+
+Sample `.eml` files for quick testing are available in `samples/`.
+
+For a single-command deployment-style run on platforms like Hugging Face Spaces:
+
+```bash
+./start.sh
 ```
 
 ---
@@ -112,23 +139,26 @@ streamlit run app.py
 1. Preprocessing:
    Cleans and standardizes email text, removing HTML tags and irrelevant characters.
 
-2. Keyword Detection & Scoring:
-   Identifies suspicious words (e.g., “urgent,” “verify,” “password”) and calculates a score based on their frequency and position.
+2. Machine-Learning Prediction:
+   Uses the trained phishing email classifier to estimate phishing probability from subject, body, sender domain, and URL patterns.
 
-3. Domain Legitimacy Check:
+3. Keyword Detection & Scoring:
+   Identifies suspicious words (e.g., “urgent,” “verify,” “password”) and calculates a supporting score.
+
+4. Domain Legitimacy Check:
    Validates sender domains against a trusted domain list using a reference CSV file.
 
-4. URL Extraction & Validation:
+5. URL Extraction & Validation:
    Detects URLs within email content and checks whether they belong to known safe domains.
 
-5. Edit Distance Analysis:
+6. Edit Distance Analysis:
    Uses the Levenshtein distance algorithm to detect lookalike domains (e.g., paypa1.com vs paypal.com).
 
-6. Unified Risk Scoring:
-   Aggregates results from all modules (keyword, URL, edit distance, domain) to calculate a total phishing risk score.
+7. Unified Risk Scoring:
+   Aggregates the model output with keyword, URL, edit distance, and domain checks to calculate a final phishing risk score.
 
-7. Frontend Visualization:
-   A Streamlit-based interface displays the results, highlights risky terms, and explains why an email is flagged.
+8. Frontend Visualization:
+   A Streamlit-based interface displays the final verdict, confidence, supporting reasons, highlighted risky terms, and detailed link/domain analysis.
 
 ## 6. Results and Insights
 
@@ -142,3 +172,56 @@ In addition to text analysis, the system examines all links found in the email. 
 
 This project was developed for academic purposes under the SIT INF1002: Programming Fundamentals module.
 All content is intended for educational use only.
+
+## 8. Deploy To Hugging Face Spaces
+
+This repository is now prepared for a Docker Space deployment.
+
+Files used for Hugging Face Spaces:
+
+- `Dockerfile`
+- `start.sh`
+- `requirements-space.txt`
+- `.dockerignore`
+- This `README.md` front matter
+
+### Option A: Upload through the Hugging Face website
+
+1. Sign in to [Hugging Face](https://huggingface.co/).
+2. Click **New Space**.
+3. Choose a Space name.
+4. Select **Docker** as the SDK.
+5. Set visibility to public or private.
+6. Create the Space.
+7. Upload the full project contents into the Space repository.
+8. Wait for the build logs to finish.
+9. Open the Space URL after the status becomes **Running**.
+
+### Option B: Push with Git
+
+```bash
+git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
+git push hf main
+```
+
+If your local branch is not `main`, replace `main` with your branch name.
+
+### Notes
+
+- The app listens on port `7860`, which matches the Hugging Face Docker Space setting in this README.
+- `start.sh` starts the Flask backend first, then the Streamlit frontend.
+- Streamlit XSRF protection is disabled in `start.sh` so file upload works correctly in Docker Spaces.
+- The saved model in `models/` is used directly, so the Space does not need to retrain the model during startup.
+
+### Local Docker Test Before Pushing
+
+```bash
+docker build -t phishing-email-detection .
+docker run -p 7860:7860 phishing-email-detection
+```
+
+Then open:
+
+```text
+http://localhost:7860
+```

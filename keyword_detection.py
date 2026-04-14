@@ -7,10 +7,6 @@ nlp = spacy.load("en_core_web_sm")
 
 df = pd.read_csv(r"Datasets/cleaned_SA.csv")
 suspicious_keywords = []
-
-class Colors:   
-    GREEN = '\033[92m'
-    RESET = '\033[0m'
     
 common_words = {
     "email", "mail", "message", "information", "account", "service", "time", "day", 

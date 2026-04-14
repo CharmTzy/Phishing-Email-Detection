@@ -1,5 +1,37 @@
 import csv
 import os
+from email.utils import parseaddr
+
+
+def not_found_result():
+    return {
+        "domain": "Not Found",
+        "legitimacy_score": "Not Found",
+        "total_occurrences": "Not Found",
+        "in_spam": "Not Found",
+        "in_ham": "Not Found",
+        "sources": "Not Found",
+        "category": "Not Found"
+    }
+
+
+def unknown_domain_result(domain: str):
+    return {
+        "domain": domain,
+        "legitimacy_score": 0,
+        "total_occurrences": 0,
+        "in_spam": 0,
+        "in_ham": 0,
+        "sources": "none",
+        "category": "unknown"
+    }
+
+
+def extract_domain(email: str) -> str:
+    parsed_email = parseaddr(email or "")[1] or (email or "")
+    if "@" not in parsed_email:
+        return ""
+    return parsed_email.split("@", 1)[1].strip().lower().strip(">")
 
 def check_domain_in_csv(email: str) -> dict:
     """
@@ -14,34 +46,15 @@ def check_domain_in_csv(email: str) -> dict:
     - Domains with legitimacy score < 90 and low occurrence are classified as suspicious
     """
     # Extract domain from email
-    try:
-        domain = email.split('@')[1].strip().lower()
-        print(f"Extracted domain: {domain}")
-    except IndexError:
-        # Invalid email format
-        return {
-            "domain": "Not Found",
-            "legitimacy_score": "Not Found",
-            "total_occurrences": "Not Found",
-            "in_spam": "Not Found",
-            "in_ham": "Not Found",
-            "sources": "Not Found",
-            "category": "Not Found"
-        }
+    domain = extract_domain(email)
+    if not domain:
+        return not_found_result()
     
     csv_path = "domain_analysis_full.csv"
     
     # Check if CSV file exists
     if not os.path.isfile(csv_path):
-        return {
-            "domain": "Not Found",
-            "legitimacy_score": "Not Found",
-            "total_occurrences": "Not Found",
-            "in_spam": "Not Found",
-            "in_ham": "Not Found",
-            "sources": "Not Found",
-            "category": "Not Found"
-        }
+        return unknown_domain_result(domain)
     
     # Read CSV and search for domain
     with open(csv_path, mode='r', newline='', encoding='utf-8') as file:
@@ -50,15 +63,7 @@ def check_domain_in_csv(email: str) -> dict:
         # Check if required columns exist
         required_columns = {"domain", "legitimacy_score", "total_occurrences", "in_spam", "in_ham", "sources", "category"}
         if not required_columns.issubset(reader.fieldnames or []):
-            return {
-                "domain": "Not Found",
-                "legitimacy_score": "Not Found",
-                "total_occurrences": "Not Found",
-                "in_spam": "Not Found",
-                "in_ham": "Not Found",
-                "sources": "Not Found",
-                "category": "Not Found"
-            }
+            return unknown_domain_result(domain)
         
         for row in reader:
             if row["domain"].strip().lower() == domain:
@@ -87,13 +92,6 @@ def check_domain_in_csv(email: str) -> dict:
                 
                 return result
     
-    # Domain not found
-    return {
-        "domain": "Not Found",
-        "legitimacy_score": "Not Found",
-        "total_occurrences": "Not Found",
-        "in_spam": "Not Found",
-        "in_ham": "Not Found",
-        "sources": "Not Found",
-        "category": "Not Found"
-    }
+    # Domain not found in the lookup file, but we still return the extracted domain
+    # so the UI can show something useful to the user.
+    return unknown_domain_result(domain)

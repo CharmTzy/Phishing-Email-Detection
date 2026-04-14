@@ -1,7 +1,7 @@
+import os
+
 from flask import Flask, request, jsonify
-from keyword_detection import keyword_score, find_keywords, highlight_keywords
 from flask_cors import CORS
-from url_detection import extract_urls, URLvalidator
 from all_checks import analyseEmails
 
 app = Flask(__name__)
@@ -29,6 +29,7 @@ def analyse_email_api():
             "final_label": "Error",
             "email_data": {},
             "overall_score": 0,             # default score
+            "risk_level": "Unknown",
             "spam_votes": 0,                # no checks passed
             "keyword_score": 0,
             "keyword_label": "Error",
@@ -37,9 +38,24 @@ def analyse_email_api():
             "body_highlighted": "",
             "urls": [],
             "urlCheck": [],
-            "editCheck": []
+            "editCheck": [],
+            "model_prediction": "Error",
+            "model_probability": 0,
+            "model_score": 0,
+            "model_confidence": 0,
+            "model_indicators": [],
+            "model_metrics": {},
+            "model_trained_at": "",
+            "model_name": "",
+            "checks_breakdown": [],
+            "reasons": [],
+            "verdict_message": ""
         }) #, 500
 
   
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(
+        host=os.getenv("BACKEND_HOST", "127.0.0.1"),
+        port=int(os.getenv("BACKEND_PORT", "5000")),
+        debug=os.getenv("FLASK_DEBUG", "1") == "1",
+    )
