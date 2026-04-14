@@ -116,3 +116,24 @@ def test_analyse_email_company_url_matches_sender(client):
     assert response.status_code == 200
     assert data["final_label"] == "Safe"
     assert data["urlStatus"] == ["aligned"]
+
+
+def test_analyse_email_explicit_adult_spam_is_flagged(client):
+    email = {
+        "sender_email": "nxfkopyp@scenmatgigegalital.ru",
+        "subject": "Tonight we're going to do something I've wanted to do for a long time. It's gonna be so much fun!",
+        "body": (
+            "FIRST FREE ADULT CHAT\n\n"
+            "What would you like to experience with me?\n\n"
+            "Date\nPrivate Chat\nExclusive Photos\nSpecial Moments\n\n"
+            "ACCEPT\n\nI AM 18+"
+        ),
+        "url": "",
+    }
+
+    response = client.post("/analyse_email", json=email)
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["final_label"] == "Spam"
+    assert data["model_prediction"] == "Spam"

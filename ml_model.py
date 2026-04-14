@@ -1,7 +1,6 @@
 import json
 import re
 from datetime import datetime, timezone
-from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -104,6 +103,7 @@ NUMERIC_FEATURE_LABELS = {
     "link_token_count": "Email repeats link-like text patterns",
 }
 IPV4_PATTERN = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
+_MODEL_CACHE = {"signature": None, "artifact": None}
 
 
 def clean_text(value):
@@ -408,11 +408,11 @@ def save_model_artifact(artifact):
 
 def train_and_save_model(force=False):
     if MODEL_PATH.exists() and not force:
-        return _load_model_artifact_uncached()
+        return load_model_artifact()
 
     artifact = train_model()
     save_model_artifact(artifact)
-    load_model_artifact.cache_clear()
+    _update_model_cache(artifact)
     return artifact
 
 
@@ -420,11 +420,27 @@ def _load_model_artifact_uncached():
     return joblib.load(MODEL_PATH)
 
 
-@lru_cache(maxsize=1)
+def _model_signature():
+    if not MODEL_PATH.exists():
+        return None
+    stat = MODEL_PATH.stat()
+    return (stat.st_mtime_ns, stat.st_size)
+
+
+def _update_model_cache(artifact):
+    _MODEL_CACHE["signature"] = _model_signature()
+    _MODEL_CACHE["artifact"] = artifact
+    return artifact
+
+
 def load_model_artifact():
     if not MODEL_PATH.exists():
         return train_and_save_model(force=True)
-    return _load_model_artifact_uncached()
+    signature = _model_signature()
+    if _MODEL_CACHE["signature"] != signature or _MODEL_CACHE["artifact"] is None:
+        artifact = _load_model_artifact_uncached()
+        return _update_model_cache(artifact)
+    return _MODEL_CACHE["artifact"]
 
 
 def format_indicator(feature_name):
