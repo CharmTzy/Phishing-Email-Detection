@@ -59,9 +59,23 @@ def test_analyse_email_empty_body(client):
     data = response.get_json()
 
     assert response.status_code == 200
-    assert "final_label" in data
-    assert "overall_score" in data
-    assert "model_probability" in data
+    assert data["final_label"] == "Safe"
+    assert data["overall_score"] == 0.0
+    assert data["model_probability"] == 0.0
+    assert data["spam_votes"] == 0
+
+
+def test_analyse_email_placeholder_body_is_treated_as_empty(client):
+    response = client.post("/analyse_email", json={"body": "nan"})
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["final_label"] == "Safe"
+    assert data["overall_score"] == 0.0
+    assert data["model_prediction"] == "Safe"
+    assert data["model_probability"] == 0.0
+    assert data["body_highlighted"] == ""
+    assert data["spam_votes"] == 0
 
 
 def test_analyse_email_invalid_json(client):

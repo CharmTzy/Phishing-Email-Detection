@@ -23,6 +23,7 @@ METRICS_PATH = MODEL_DIR / "phishing_email_metrics.json"
 MODEL_THRESHOLD = 0.42
 REQUIRED_COLUMNS = ["subject", "body", "from", "urls", "label"]
 GENERIC_TOKENS = {"subject", "body", "sender", "urls", "combined"}
+PLACEHOLDER_TEXT_VALUES = {"nan", "none", "null", "n/a", "<na>"}
 FREE_MAIL_DOMAINS = {
     "gmail.com",
     "yahoo.com",
@@ -109,7 +110,8 @@ _MODEL_CACHE = {"signature": None, "artifact": None}
 def clean_text(value):
     if pd.isna(value):
         return ""
-    return str(value).strip()
+    cleaned = str(value).strip()
+    return "" if cleaned.lower() in PLACEHOLDER_TEXT_VALUES else cleaned
 
 
 def extract_sender_domain(value):
@@ -260,6 +262,14 @@ def prepare_inference_features(email):
             }
         ]
     )
+
+
+def has_meaningful_content(email):
+    sender_email = clean_text(email.get("sender_email") or email.get("from", ""))
+    subject = clean_text(email.get("subject", ""))
+    body = clean_text(email.get("body", ""))
+    urls = clean_text(email.get("urls", "")) or clean_text(email.get("url", ""))
+    return any([sender_email, subject, body, urls])
 
 
 def build_pipeline():
@@ -505,6 +515,19 @@ def extract_top_indicators(pipeline, features_frame, limit=5):
 
 def predict_email(email):
     artifact = load_model_artifact()
+    if not has_meaningful_content(email):
+        return {
+            "model_prediction": "Safe",
+            "model_probability": 0.0,
+            "model_score": 0.0,
+            "model_confidence": 0.0,
+            "model_indicators": [],
+            "model_metrics": artifact["metrics"],
+            "model_trained_at": artifact["trained_at"],
+            "model_name": artifact["model_name"],
+            "model_threshold": artifact["threshold"],
+        }
+
     pipeline = artifact["pipeline"]
     features = prepare_inference_features(email)
 

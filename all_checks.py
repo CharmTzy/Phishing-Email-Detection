@@ -3,7 +3,7 @@ import re
 from domain_detection import check_domain_in_csv
 from edit_distance import editDistance
 from keyword_detection import find_keywords, highlight_keywords, keyword_score
-from ml_model import predict_email
+from ml_model import clean_text, predict_email
 from trusted_sites import extract_email_domain, getSiteList
 from url_detection import analyze_url, extract_urls
 
@@ -198,10 +198,10 @@ def analyseEmails(email):
     """
     Analyse an email for phishing risk and return the hybrid model + rules result.
     """
-    sender_email = email.get("sender_email") or email.get("from", "")
-    subject = email.get("subject", "")
-    body = email.get("body", "")
-    url = email.get("url", "")
+    sender_email = clean_text(email.get("sender_email") or email.get("from", ""))
+    subject = clean_text(email.get("subject", ""))
+    body = clean_text(email.get("body", ""))
+    url = clean_text(email.get("url", ""))
 
     ml_result = predict_email(
         {
