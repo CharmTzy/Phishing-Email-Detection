@@ -81,6 +81,16 @@ def _prepare_hostname(url):
     return hostname, registrable_domain, ""
 
 
+def normalize_registrable_domain(value):
+    """
+    Normalize a URL or hostname into a registrable/base domain.
+    """
+    _, registrable_domain, error_reason = _prepare_hostname(value)
+    if error_reason:
+        return ""
+    return registrable_domain
+
+
 def _strong_suspicion_reason(hostname, registrable_domain):
     if IPV4_PATTERN.fullmatch(hostname or ""):
         return "Uses an IP address instead of a normal domain."
@@ -99,11 +109,12 @@ def _strong_suspicion_reason(hostname, registrable_domain):
     return ""
 
 
-def analyze_url(url):
+def analyze_url(url, sender_domain=None):
     """
     Return a richer URL assessment with statuses:
     - trusted: known good domain
-    - unlisted: valid but not recognized
+    - aligned: valid link that matches the sender domain
+    - normal: valid link that looks structurally normal
     - suspicious: invalid or strongly suspicious structure
     """
     hostname, registrable_domain, error_reason = _prepare_hostname(url)
@@ -136,10 +147,20 @@ def analyze_url(url):
             "is_suspicious": True,
         }
 
+    normalized_sender_domain = normalize_registrable_domain(sender_domain) if sender_domain else ""
+    if normalized_sender_domain and registrable_domain == normalized_sender_domain:
+        return {
+            "status": "aligned",
+            "domain": registrable_domain,
+            "reason": "Domain matches the sender domain.",
+            "is_trusted": False,
+            "is_suspicious": False,
+        }
+
     return {
-        "status": "unlisted",
+        "status": "normal",
         "domain": registrable_domain,
-        "reason": "Domain is valid but not in the trusted list.",
+        "reason": "Domain is valid and looks structurally normal.",
         "is_trusted": False,
         "is_suspicious": False,
     }

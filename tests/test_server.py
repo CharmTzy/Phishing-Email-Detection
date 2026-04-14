@@ -99,7 +99,7 @@ def test_analyse_email_phishing_url(client):
     assert isinstance(data["editCheck"], list)
 
 
-def test_analyse_email_unlisted_company_url_is_neutral(client):
+def test_analyse_email_company_url_matches_sender(client):
     email = {
         "sender_email": "office@company-example.com",
         "subject": "Project meeting moved to Friday",
@@ -115,4 +115,4 @@ def test_analyse_email_unlisted_company_url_is_neutral(client):
 
     assert response.status_code == 200
     assert data["final_label"] == "Safe"
-    assert "unlisted" in data["urlStatus"]
+    assert data["urlStatus"] == ["aligned"]

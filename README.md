@@ -1,13 +1,3 @@
----
-title: Phishing Email Detection
-emoji: 🛡️
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Project Title: Phishing Email Detection
 
 ## Group Members

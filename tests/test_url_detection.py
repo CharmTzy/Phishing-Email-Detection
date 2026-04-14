@@ -41,9 +41,17 @@ def test_urlvalidator_safe_urls():
     assert url_detection.URLvalidator("safe.example.com") is True
     assert url_detection.URLvalidator("trusted.site.com") is True
 
-def test_analyze_url_unlisted_valid_domain():
+def test_analyze_url_normal_valid_domain():
     result = url_detection.analyze_url("company-example.com")
-    assert result["status"] == "unlisted"
+    assert result["status"] == "normal"
+    assert result["is_suspicious"] is False
+
+def test_analyze_url_aligned_with_sender_domain():
+    result = url_detection.analyze_url(
+        "https://company-example.com/meetings/q2-planning",
+        sender_domain="office@company-example.com",
+    )
+    assert result["status"] == "aligned"
     assert result["is_suspicious"] is False
 
 def test_analyze_url_suspicious_ip_address():
