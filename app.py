@@ -267,8 +267,8 @@ if submitted:
 
                     if url_status == "trusted" or safe:
                         status = "Safe ✅"
-                    elif url_status == "unknown":
-                        status = "Unknown ⚪"
+                    elif url_status == "unlisted":
+                        status = "Valid but unlisted ⚪"
                     else:
                         status = "Suspicious ❌"
                     st.markdown(f"- {u} → {status}")

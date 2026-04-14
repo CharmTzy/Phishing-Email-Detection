@@ -103,7 +103,7 @@ def analyze_url(url):
     """
     Return a richer URL assessment with statuses:
     - trusted: known good domain
-    - unknown: valid but not recognized
+    - unlisted: valid but not recognized
     - suspicious: invalid or strongly suspicious structure
     """
     hostname, registrable_domain, error_reason = _prepare_hostname(url)
@@ -137,7 +137,7 @@ def analyze_url(url):
         }
 
     return {
-        "status": "unknown",
+        "status": "unlisted",
         "domain": registrable_domain,
         "reason": "Domain is valid but not in the trusted list.",
         "is_trusted": False,

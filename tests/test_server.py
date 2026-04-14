@@ -97,3 +97,22 @@ def test_analyse_email_phishing_url(client):
     assert data["final_label"] in ["Spam", "Safe"]
     assert "checks_breakdown" in data
     assert isinstance(data["editCheck"], list)
+
+
+def test_analyse_email_unlisted_company_url_is_neutral(client):
+    email = {
+        "sender_email": "office@company-example.com",
+        "subject": "Project meeting moved to Friday",
+        "body": (
+            "Hi team, the weekly project sync has moved to Friday at 3:00 pm. "
+            "Please review the agenda at https://company-example.com/meetings/q2-planning."
+        ),
+        "url": "https://company-example.com/meetings/q2-planning",
+    }
+
+    response = client.post("/analyse_email", json=email)
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["final_label"] == "Safe"
+    assert "unlisted" in data["urlStatus"]

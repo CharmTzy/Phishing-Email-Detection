@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlparse
 
 import joblib
 import numpy as np
@@ -13,15 +14,96 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 ROOT_DIR = Path(__file__).resolve().parent
 DATASET_PATH = ROOT_DIR / "Datasets" / "cleaned_SA.csv"
 MODEL_DIR = ROOT_DIR / "models"
 MODEL_PATH = MODEL_DIR / "phishing_email_model.joblib"
 METRICS_PATH = MODEL_DIR / "phishing_email_metrics.json"
-MODEL_THRESHOLD = 0.40
+MODEL_THRESHOLD = 0.42
 REQUIRED_COLUMNS = ["subject", "body", "from", "urls", "label"]
-GENERIC_TOKENS = {"subject", "body", "sender", "urls"}
+GENERIC_TOKENS = {"subject", "body", "sender", "urls", "combined"}
+FREE_MAIL_DOMAINS = {
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "aol.com",
+    "icloud.com",
+    "msn.com",
+    "proton.me",
+    "protonmail.com",
+}
+URGENCY_TERMS = {
+    "urgent",
+    "immediately",
+    "asap",
+    "today",
+    "now",
+    "alert",
+    "limited",
+    "deadline",
+    "expiring",
+}
+ACCOUNT_ACTION_TERMS = {
+    "verify",
+    "login",
+    "log in",
+    "password",
+    "reset",
+    "update",
+    "confirm",
+    "security",
+    "account",
+    "suspended",
+}
+OFFER_TERMS = {
+    "free",
+    "gift",
+    "bonus",
+    "prize",
+    "winner",
+    "deal",
+    "discount",
+    "promotion",
+}
+NUMERIC_FEATURE_COLUMNS = [
+    "subject_length",
+    "body_length",
+    "url_count",
+    "sender_domain_depth",
+    "uppercase_token_count",
+    "exclamation_count",
+    "digit_ratio",
+    "currency_symbol_count",
+    "urgency_term_count",
+    "account_term_count",
+    "offer_term_count",
+    "sender_is_free_mail",
+    "ip_url_count",
+    "hyphenated_url_count",
+    "link_token_count",
+]
+NUMERIC_FEATURE_LABELS = {
+    "subject_length": "Subject length added some phishing signal",
+    "body_length": "Body length added some phishing signal",
+    "url_count": "Email contains several links",
+    "sender_domain_depth": "Sender domain depth looks unusual",
+    "uppercase_token_count": "Email uses many uppercase words",
+    "exclamation_count": "Email uses many exclamation marks",
+    "digit_ratio": "Email has an unusually high digit ratio",
+    "currency_symbol_count": "Email mentions money or currency symbols",
+    "urgency_term_count": "Email uses urgent language",
+    "account_term_count": "Email pushes account or login actions",
+    "offer_term_count": "Email uses offer or giveaway language",
+    "sender_is_free_mail": "Sender uses a free-mail domain",
+    "ip_url_count": "Email includes an IP-based link",
+    "hyphenated_url_count": "Email includes highly hyphenated links",
+    "link_token_count": "Email repeats link-like text patterns",
+}
+IPV4_PATTERN = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
 
 
 def clean_text(value):
@@ -46,6 +128,69 @@ def build_combined_text(subject, body, sender_domain, urls):
     return " ".join(part for part in parts if part).strip()
 
 
+def split_url_candidates(urls):
+    raw_urls = clean_text(urls)
+    if not raw_urls:
+        return []
+
+    candidates = []
+    for part in re.split(r"[\s,]+", raw_urls):
+        candidate = part.strip(" <>()[]{}\"'")
+        if not candidate:
+            continue
+        candidates.append(candidate)
+    return candidates
+
+
+def extract_hostname(candidate):
+    if not candidate:
+        return ""
+
+    prepared = candidate if "://" in candidate else f"https://{candidate}"
+    parsed = urlparse(prepared)
+    return (parsed.hostname or "").lower()
+
+
+def count_term_hits(text, terms):
+    lowered = clean_text(text).lower()
+    return sum(len(re.findall(rf"\b{re.escape(term)}\b", lowered)) for term in terms)
+
+
+def count_uppercase_tokens(text):
+    return sum(1 for token in re.findall(r"\b[A-Z]{3,}\b", clean_text(text)) if token.isupper())
+
+
+def compute_numeric_features(subject, body, sender_domain, urls):
+    subject_text = clean_text(subject)
+    body_text = clean_text(body)
+    full_text = f"{subject_text} {body_text}".strip()
+    full_text_no_space = re.sub(r"\s+", "", full_text)
+    url_candidates = split_url_candidates(urls)
+    hostnames = [extract_hostname(url) for url in url_candidates if extract_hostname(url)]
+
+    digit_count = sum(character.isdigit() for character in full_text_no_space)
+    currency_count = len(re.findall(r"[$€£¥]|sgd|usd|eur|gbp", full_text.lower()))
+    link_token_count = len(re.findall(r"(?:https?://|www\.|bit\.ly|tinyurl|click)", full_text.lower()))
+
+    return {
+        "subject_length": float(len(subject_text)),
+        "body_length": float(len(body_text)),
+        "url_count": float(len(url_candidates)),
+        "sender_domain_depth": float(max(sender_domain.count("."), 0)),
+        "uppercase_token_count": float(count_uppercase_tokens(full_text)),
+        "exclamation_count": float(full_text.count("!")),
+        "digit_ratio": round(digit_count / max(len(full_text_no_space), 1), 4),
+        "currency_symbol_count": float(currency_count),
+        "urgency_term_count": float(count_term_hits(full_text, URGENCY_TERMS)),
+        "account_term_count": float(count_term_hits(full_text, ACCOUNT_ACTION_TERMS)),
+        "offer_term_count": float(count_term_hits(full_text, OFFER_TERMS)),
+        "sender_is_free_mail": float(sender_domain in FREE_MAIL_DOMAINS),
+        "ip_url_count": float(sum(bool(IPV4_PATTERN.fullmatch(hostname)) for hostname in hostnames)),
+        "hyphenated_url_count": float(sum(hostname.count("-") >= 2 for hostname in hostnames)),
+        "link_token_count": float(link_token_count),
+    }
+
+
 def prepare_training_features(dataset):
     prepared = dataset.copy()
 
@@ -55,6 +200,9 @@ def prepare_training_features(dataset):
         prepared[column] = prepared[column].fillna("").astype(str)
 
     prepared["sender_domain"] = prepared["from"].apply(extract_sender_domain)
+    prepared["subject_text"] = prepared["subject"].astype(str)
+    prepared["body_text"] = prepared["body"].astype(str)
+    prepared["url_text"] = prepared["urls"].astype(str)
     prepared["combined_text"] = prepared.apply(
         lambda row: build_combined_text(
             row["subject"],
@@ -64,8 +212,24 @@ def prepare_training_features(dataset):
         ),
         axis=1,
     )
+    numeric_features = prepared.apply(
+        lambda row: compute_numeric_features(
+            row["subject"],
+            row["body"],
+            row["sender_domain"],
+            row["urls"],
+        ),
+        axis=1,
+        result_type="expand",
+    )
 
-    return prepared[["combined_text"]]
+    return pd.concat(
+        [
+            prepared[["subject_text", "body_text", "sender_domain", "url_text", "combined_text"]],
+            numeric_features[NUMERIC_FEATURE_COLUMNS],
+        ],
+        axis=1,
+    )
 
 
 def prepare_inference_features(email):
@@ -75,16 +239,24 @@ def prepare_inference_features(email):
     url_text = ", ".join(
         value for value in [clean_text(email.get("urls", "")), provided_url] if value
     )
+    subject = email.get("subject", "")
+    body = email.get("body", "")
+    numeric_features = compute_numeric_features(subject, body, sender_domain, url_text)
 
     return pd.DataFrame(
         [
             {
+                "subject_text": clean_text(subject),
+                "body_text": clean_text(body),
+                "sender_domain": sender_domain,
+                "url_text": url_text,
                 "combined_text": build_combined_text(
-                    email.get("subject", ""),
-                    email.get("body", ""),
+                    subject,
+                    body,
                     sender_domain,
                     url_text,
-                )
+                ),
+                **numeric_features,
             }
         ]
     )
@@ -94,26 +266,42 @@ def build_pipeline():
     feature_builder = ColumnTransformer(
         transformers=[
             (
-                "word",
+                "subject_word",
                 TfidfVectorizer(
                     stop_words="english",
                     ngram_range=(1, 2),
                     min_df=2,
-                    max_features=18000,
+                    max_features=5000,
+                    sublinear_tf=True,
+                ),
+                "subject_text",
+            ),
+            (
+                "body_word",
+                TfidfVectorizer(
+                    stop_words="english",
+                    ngram_range=(1, 2),
+                    min_df=2,
+                    max_features=11000,
+                    sublinear_tf=True,
+                ),
+                "body_text",
+            ),
+            (
+                "combined_char",
+                TfidfVectorizer(
+                    analyzer="char_wb",
+                    ngram_range=(3, 5),
+                    min_df=2,
+                    max_features=9000,
                     sublinear_tf=True,
                 ),
                 "combined_text",
             ),
             (
-                "char",
-                TfidfVectorizer(
-                    analyzer="char_wb",
-                    ngram_range=(3, 5),
-                    min_df=2,
-                    max_features=12000,
-                    sublinear_tf=True,
-                ),
-                "combined_text",
+                "numeric",
+                Pipeline([("scale", StandardScaler())]),
+                NUMERIC_FEATURE_COLUMNS,
             ),
         ]
     )
@@ -127,7 +315,7 @@ def build_pipeline():
                     max_iter=3000,
                     class_weight="balanced",
                     random_state=42,
-                    C=4.0,
+                    C=6.0,
                 ),
             ),
         ]
@@ -197,7 +385,7 @@ def train_model():
         "feature_count": int(
             len(pipeline.named_steps["preprocessor"].get_feature_names_out())
         ),
-        "model_name": "word_char_tfidf_logistic_regression",
+        "model_name": "hybrid_text_numeric_logistic_regression",
     }
 
 
@@ -243,25 +431,26 @@ def format_indicator(feature_name):
     source, _, raw_value = feature_name.partition("__")
     raw_value = re.sub(r"\s+", " ", raw_value.replace("_", " ")).strip()
 
-    if source != "word" or not raw_value:
+    if not raw_value:
         return None
+    if source == "numeric":
+        return NUMERIC_FEATURE_LABELS.get(raw_value)
+
+    if source not in {"subject_word", "body_word", "combined_char"}:
+        return None
+
+    if source == "combined_char":
+        return None
+
     if raw_value in GENERIC_TOKENS:
         return None
     if len(raw_value) < 3 or not re.search(r"[A-Za-z]", raw_value):
         return None
 
-    if raw_value.startswith("subject "):
-        keyword = raw_value.removeprefix("subject ").strip()
-        return f'Subject mentions "{keyword}"' if keyword else None
-    if raw_value.startswith("body "):
-        keyword = raw_value.removeprefix("body ").strip()
-        return f'Body contains "{keyword}"' if keyword else None
-    if raw_value.startswith("sender "):
-        keyword = raw_value.removeprefix("sender ").strip()
-        return f'Sender resembles "{keyword}"' if keyword else None
-    if raw_value.startswith("urls "):
-        keyword = raw_value.removeprefix("urls ").strip()
-        return f'URL text contains "{keyword}"' if keyword else None
+    if source == "subject_word":
+        return f'Subject mentions "{raw_value}"'
+    if source == "body_word":
+        return f'Body contains "{raw_value}"'
 
     return f'Model signal: "{raw_value}"'
 

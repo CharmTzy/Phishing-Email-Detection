@@ -132,7 +132,7 @@ def build_check_breakdown(
     keyword_score_value,
     keywords,
     suspicious_urls,
-    unknown_urls,
+    unlisted_urls,
     lookalikes,
     email_data,
 ):
@@ -165,13 +165,13 @@ def build_check_breakdown(
         },
         {
             "name": "URL Safety",
-            "status": "Suspicious" if suspicious_urls else ("Unknown" if unknown_urls else "Clear"),
+            "status": "Suspicious" if suspicious_urls else ("Neutral" if unlisted_urls else "Clear"),
             "detail": (
                 f"High-risk links found: {', '.join(suspicious_urls[:3])}."
                 if suspicious_urls
                 else (
-                    f"Links were valid but not in the trusted list: {', '.join(unknown_urls[:3])}."
-                    if unknown_urls
+                    f"Links were valid but not in the trusted list yet: {', '.join(unlisted_urls[:3])}."
+                    if unlisted_urls
                     else "No high-risk links were found."
                 )
             ),
@@ -234,7 +234,7 @@ def analyseEmails(email):
     url_status = []
     edit_check = []
     suspicious_urls = []
-    unknown_urls = []
+    unlisted_urls = []
     lookalikes = []
 
     for url_candidate in email_urls:
@@ -249,14 +249,14 @@ def analyseEmails(email):
 
         if analysis["status"] == "suspicious":
             suspicious_urls.append(base_domain)
-        elif analysis["status"] == "unknown":
-            unknown_urls.append(base_domain)
+        elif analysis["status"] == "unlisted":
+            unlisted_urls.append(base_domain)
 
         if edit_result[0] <= 2 and edit_result[0] != 0:
             lookalikes.append((base_domain, edit_result[0], edit_result[1]))
 
     suspicious_urls = dedupe_preserve_order(suspicious_urls)
-    unknown_urls = dedupe_preserve_order(unknown_urls)
+    unlisted_urls = dedupe_preserve_order(unlisted_urls)
 
     domain_category = str(email_data.get("category", "")).lower()
     risky_domain_flag = domain_category in RISKY_DOMAIN_CATEGORIES
@@ -326,7 +326,7 @@ def analyseEmails(email):
             keyword_score_value,
             keywords,
             suspicious_urls,
-            unknown_urls,
+            unlisted_urls,
             lookalikes,
             email_data,
         ),

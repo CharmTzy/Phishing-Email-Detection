@@ -41,9 +41,9 @@ def test_urlvalidator_safe_urls():
     assert url_detection.URLvalidator("safe.example.com") is True
     assert url_detection.URLvalidator("trusted.site.com") is True
 
-def test_analyze_url_unknown_valid_domain():
+def test_analyze_url_unlisted_valid_domain():
     result = url_detection.analyze_url("company-example.com")
-    assert result["status"] == "unknown"
+    assert result["status"] == "unlisted"
     assert result["is_suspicious"] is False
 
 def test_analyze_url_suspicious_ip_address():
