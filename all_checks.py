@@ -135,6 +135,7 @@ def build_check_breakdown(
     neutral_urls,
     lookalikes,
     email_data,
+    check_flags,
 ):
     domain_category = str(email_data.get("category", "")).lower()
 
@@ -151,12 +152,12 @@ def build_check_breakdown(
     return [
         {
             "name": "Trained Model",
-            "status": "Suspicious" if ml_result["model_prediction"] == "Spam" else "Clear",
+            "status": "Suspicious" if check_flags["trained_model"] else "Clear",
             "detail": f"{ml_result['model_score']}% phishing probability.",
         },
         {
             "name": "Keyword Scan",
-            "status": "Suspicious" if keyword_score_value >= 50 else "Clear",
+            "status": "Suspicious" if check_flags["keyword_scan"] else "Clear",
             "detail": (
                 f"Score {keyword_score_value} with keywords: {', '.join(keywords[:4])}."
                 if keywords
@@ -165,7 +166,7 @@ def build_check_breakdown(
         },
         {
             "name": "URL Safety",
-            "status": "Suspicious" if suspicious_urls else ("Neutral" if neutral_urls else "Clear"),
+            "status": "Suspicious" if check_flags["url_safety"] else ("Neutral" if neutral_urls else "Clear"),
             "detail": (
                 f"High-risk links found: {', '.join(suspicious_urls[:3])}."
                 if suspicious_urls
@@ -178,7 +179,7 @@ def build_check_breakdown(
         },
         {
             "name": "Lookalike Domains",
-            "status": "Suspicious" if lookalikes else "Clear",
+            "status": "Suspicious" if check_flags["lookalike_domains"] else "Clear",
             "detail": (
                 f'{lookalikes[0][0]} is similar to {lookalikes[0][2]}.'
                 if lookalikes
@@ -243,7 +244,14 @@ def analyseEmails(email):
         url_check.append(is_safe)
         url_status.append(analysis["status"])
 
-        edit_result = editDistance(trusted_sites, base_domain)
+        if analysis.get("closest_trusted"):
+            distance = analysis.get("lookalike_distance")
+            edit_result = [
+                distance if distance is not None else 0,
+                analysis["closest_trusted"],
+            ]
+        else:
+            edit_result = editDistance(trusted_sites, base_domain)
         edit_check.append(edit_result)
 
         if analysis["status"] == "suspicious":
@@ -251,7 +259,14 @@ def analyseEmails(email):
         elif analysis["status"] in {"aligned", "normal"}:
             neutral_urls.append(base_domain)
 
-        if edit_result[0] <= 2 and edit_result[0] != 0:
+        if (
+            analysis["status"] == "suspicious"
+            and analysis.get("closest_trusted")
+            and edit_result[0] is not None
+            and edit_result[0] <= 2
+        ):
+            lookalikes.append((base_domain, edit_result[0], edit_result[1]))
+        elif edit_result[0] <= 2 and edit_result[0] != 0:
             lookalikes.append((base_domain, edit_result[0], edit_result[1]))
 
     suspicious_urls = dedupe_preserve_order(suspicious_urls)
@@ -260,15 +275,15 @@ def analyseEmails(email):
     domain_category = str(email_data.get("category", "")).lower()
     risky_domain_flag = domain_category in RISKY_DOMAIN_CATEGORIES
 
-    checks = [
-        ml_result["model_prediction"] == "Spam",
-        keyword_score_value >= 50,
-        bool(suspicious_urls),
-        any(distance <= 2 and distance != 0 for distance, _ in edit_check),
-        risky_domain_flag,
-    ]
-    spam_votes = sum(checks)
-    rule_score = spam_votes / len(checks)
+    check_flags = {
+        "trained_model": ml_result["model_prediction"] == "Spam",
+        "keyword_scan": keyword_score_value >= 50,
+        "url_safety": bool(suspicious_urls),
+        "lookalike_domains": bool(lookalikes),
+        "sender_domain": risky_domain_flag,
+    }
+    spam_votes = sum(check_flags.values())
+    rule_score = spam_votes / len(check_flags)
 
     critical_url_flag = bool(suspicious_urls or lookalikes)
     phishing_probability = ml_result["model_probability"]
@@ -320,6 +335,7 @@ def analyseEmails(email):
         "model_metrics": ml_result["model_metrics"],
         "model_trained_at": ml_result["model_trained_at"],
         "model_name": ml_result["model_name"],
+        "check_flags": check_flags,
         "checks_breakdown": build_check_breakdown(
             ml_result,
             keyword_score_value,
@@ -328,6 +344,7 @@ def analyseEmails(email):
             neutral_urls,
             lookalikes,
             email_data,
+            check_flags,
         ),
         "reasons": reasons,
         "verdict_message": build_verdict_message(final_label, overall_score, ml_result),

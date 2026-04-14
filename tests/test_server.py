@@ -97,6 +97,10 @@ def test_analyse_email_phishing_url(client):
     assert data["final_label"] in ["Spam", "Safe"]
     assert "checks_breakdown" in data
     assert isinstance(data["editCheck"], list)
+    assert data["urlStatus"] == ["suspicious"]
+    assert data["check_flags"]["url_safety"] is True
+    assert data["check_flags"]["lookalike_domains"] is True
+    assert data["spam_votes"] >= 3
 
 
 def test_analyse_email_company_url_matches_sender(client):
@@ -116,6 +120,7 @@ def test_analyse_email_company_url_matches_sender(client):
     assert response.status_code == 200
     assert data["final_label"] == "Safe"
     assert data["urlStatus"] == ["aligned"]
+    assert data["spam_votes"] == 0
 
 
 def test_analyse_email_explicit_adult_spam_is_flagged(client):
@@ -139,3 +144,7 @@ def test_analyse_email_explicit_adult_spam_is_flagged(client):
     assert data["model_prediction"] == "Spam"
     assert data["keyword_label"] == "Spam"
     assert data["keyword_score"] >= 50
+    assert data["check_flags"]["trained_model"] is True
+    assert data["check_flags"]["keyword_scan"] is True
+    assert data["check_flags"]["url_safety"] is False
+    assert data["check_flags"]["lookalike_domains"] is False

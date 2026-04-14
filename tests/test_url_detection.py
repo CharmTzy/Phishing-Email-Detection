@@ -54,6 +54,20 @@ def test_analyze_url_aligned_with_sender_domain():
     assert result["status"] == "aligned"
     assert result["is_suspicious"] is False
 
+def test_analyze_url_brand_impersonation_with_modifiers():
+    result = url_detection.analyze_url("https://secure-paypal-login.com")
+    assert result["status"] == "suspicious"
+    assert result["is_suspicious"] is True
+    assert result["closest_trusted"] == "paypal.com"
+    assert result["lookalike_distance"] == 0
+
+def test_analyze_url_typo_brand_impersonation():
+    result = url_detection.analyze_url("https://gooogle-security-check.com")
+    assert result["status"] == "suspicious"
+    assert result["is_suspicious"] is True
+    assert result["closest_trusted"] == "google.com"
+    assert result["lookalike_distance"] == 1
+
 def test_analyze_url_suspicious_ip_address():
     result = url_detection.analyze_url("http://192.168.1.10/login")
     assert result["status"] == "suspicious"

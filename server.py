@@ -47,6 +47,13 @@ def analyse_email_api():
             "model_metrics": {},
             "model_trained_at": "",
             "model_name": "",
+            "check_flags": {
+                "trained_model": False,
+                "keyword_scan": False,
+                "url_safety": False,
+                "lookalike_domains": False,
+                "sender_domain": False,
+            },
             "checks_breakdown": [],
             "reasons": [],
             "verdict_message": ""

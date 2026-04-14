@@ -15,6 +15,36 @@ DOMAIN_PATTERN = re.compile(
     r"[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$"
 )
 IPV4_PATTERN = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
+TOKEN_SPLIT_PATTERN = re.compile(r"[^a-z0-9]+")
+
+RISKY_BRAND_MODIFIERS = {
+    "account",
+    "auth",
+    "billing",
+    "bonus",
+    "check",
+    "claim",
+    "confirm",
+    "gift",
+    "invoice",
+    "limited",
+    "logon",
+    "login",
+    "pay",
+    "payment",
+    "portal",
+    "prize",
+    "recover",
+    "reset",
+    "secure",
+    "security",
+    "signin",
+    "support",
+    "update",
+    "verify",
+    "wallet",
+    "web",
+}
 
 
 def extract_urls(email):
@@ -109,6 +139,91 @@ def _strong_suspicion_reason(hostname, registrable_domain):
     return ""
 
 
+def _token_distance(left, right):
+    if left == right:
+        return 0
+
+    previous = list(range(len(right) + 1))
+    current = [0] * (len(right) + 1)
+
+    for i, left_char in enumerate(left, start=1):
+        current[0] = i
+        for j, right_char in enumerate(right, start=1):
+            if left_char == right_char:
+                current[j] = previous[j - 1]
+            else:
+                current[j] = 1 + min(previous[j - 1], previous[j], current[j - 1])
+        previous, current = current, previous
+
+    return previous[-1]
+
+
+def _trusted_brand_map():
+    brand_map = {}
+
+    for trusted_site in TRUSTED_SITES:
+        extracted = tldextract.extract(trusted_site)
+        if extracted.domain and extracted.suffix:
+            brand_map.setdefault(extracted.domain.lower(), trusted_site.lower())
+
+    return brand_map
+
+
+def _brand_impersonation_details(registrable_domain):
+    extracted = tldextract.extract(registrable_domain or "")
+    domain_label = extracted.domain.lower()
+    if not domain_label:
+        return None
+
+    tokens = [token for token in TOKEN_SPLIT_PATTERN.split(domain_label) if token]
+    if not tokens:
+        tokens = [domain_label]
+
+    brand_map = _trusted_brand_map()
+
+    best_match = None
+    best_distance = 99
+
+    for brand_label, trusted_site in brand_map.items():
+        if len(brand_label) < 4:
+            continue
+
+        for token in tokens:
+            if len(token) < 4:
+                continue
+
+            distance = _token_distance(token, brand_label)
+            allowed_distance = 1 if len(brand_label) < 8 else 2
+
+            if token == brand_label:
+                modifiers = [item for item in tokens if item != brand_label]
+                risky_modifiers = sorted(set(modifiers) & RISKY_BRAND_MODIFIERS)
+                if risky_modifiers:
+                    return {
+                        "closest_trusted": trusted_site,
+                        "distance": 0,
+                        "reason": (
+                            "Domain reuses a trusted brand name with risky modifiers: "
+                            + ", ".join(risky_modifiers[:3])
+                            + "."
+                        ),
+                    }
+                continue
+
+            if distance <= allowed_distance and distance < best_distance:
+                best_distance = distance
+                best_match = {
+                    "closest_trusted": trusted_site,
+                    "distance": distance,
+                    "reason": (
+                        f'Domain looks similar to trusted site "{trusted_site}" '
+                        f"(distance {distance})."
+                    ),
+                }
+
+    return best_match
+
+
 def analyze_url(url, sender_domain=None):
     """
     Return a richer URL assessment with statuses:
@@ -135,6 +250,8 @@ def analyze_url(url, sender_domain=None):
             "reason": "Domain matched the trusted list.",
             "is_trusted": True,
             "is_suspicious": False,
+            "closest_trusted": registrable_domain,
+            "lookalike_distance": 0,
         }
 
     suspicion_reason = _strong_suspicion_reason(hostname, registrable_domain)
@@ -145,16 +262,34 @@ def analyze_url(url, sender_domain=None):
             "reason": suspicion_reason,
             "is_trusted": False,
             "is_suspicious": True,
+            "closest_trusted": "",
+            "lookalike_distance": None,
         }
 
     normalized_sender_domain = normalize_registrable_domain(sender_domain) if sender_domain else ""
     if normalized_sender_domain and registrable_domain == normalized_sender_domain:
+        brand_impersonation = _brand_impersonation_details(registrable_domain)
+        if not brand_impersonation:
+            return {
+                "status": "aligned",
+                "domain": registrable_domain,
+                "reason": "Domain matches the sender domain.",
+                "is_trusted": False,
+                "is_suspicious": False,
+                "closest_trusted": "",
+                "lookalike_distance": None,
+            }
+
+    brand_impersonation = _brand_impersonation_details(registrable_domain)
+    if brand_impersonation:
         return {
-            "status": "aligned",
+            "status": "suspicious",
             "domain": registrable_domain,
-            "reason": "Domain matches the sender domain.",
+            "reason": brand_impersonation["reason"],
             "is_trusted": False,
-            "is_suspicious": False,
+            "is_suspicious": True,
+            "closest_trusted": brand_impersonation["closest_trusted"],
+            "lookalike_distance": brand_impersonation["distance"],
         }
 
     return {
@@ -163,6 +298,8 @@ def analyze_url(url, sender_domain=None):
         "reason": "Domain is valid and looks structurally normal.",
         "is_trusted": False,
         "is_suspicious": False,
+        "closest_trusted": "",
+        "lookalike_distance": None,
     }
 
 
