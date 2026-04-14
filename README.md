@@ -47,19 +47,38 @@ It aims to help users understand how linguistic and structural elements in email
 ```
 Phishing-Email-Detection/
 │
-├── main.py # Main execution file for the phishing detection system
-├── set_up.py # Initializes the trusted URL database and generates safe_urls.txt
+├── README.md # Project documentation
+├── requirements.txt # Python dependencies
+│
+├── server.py # Main execution file for phishing detection
+├── set_up.py # Initializes trusted URL database and generates safe_urls.txt
 ├── app.py # Streamlit web interface for interactive testing
-├── requirements.txt # List of required dependencies
+├── start.sh # Shell script for deployment or testing
+│
+├── SamplingData.py # Sampling and data extraction for testing
+├── Spam Data Cleaning.ipynb # Notebook for spam data preprocessing
+│
+├── trusted_sites.py # Generates legitimate domain files for comparison
+├── keyword_detection.py # Keyword scoring and classification logic
+├── url_detection.py # URL analysis and structure validation
+├── domain_detection.py # Domain analysis and impersonation detection
+├── edit_distance.py # URL similarity computation for spoof detection
+├── all_checks.py # Consolidates all phishing detection logic
+├── utilities.py # Helper functions for processing
+│
+├── domain_analysis_full.csv # Domain analysis dataset
+├── legitimate_domains.csv # List of verified legitimate domains
+├── safe_urls.txt # Generated list of safe URLs
 │
 ├── Datasets/
-│ └── cleaned_SA.csv # Input dataset used for analysis
+│ └── cleaned_SA.csv # Cleaned input dataset for analysis
 │
-│── keyword_analysis.py # Handles keyword scoring and classification logic
-│── url_analysis.py # Checks URL patterns and structure for suspicious behavior
-│── edit_distance.py # Compares URLs against trusted domains to detect impersonations
-│
-└── README.md # Project documentation and description
+└── tests/
+├── test_domain_detection.py
+├── test_edit_distance.py
+├── test_keyword_detection.py
+├── test_server.py
+└── test_url_detection.py
 ```
 
 This structure separates the main logic, data, and output clearly, making the project easy to navigate and maintain.
@@ -94,6 +113,11 @@ Install dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+Run set up files
+```
+python set_up.py
+trusted_sites.py
 ```
 
 ---
