@@ -137,3 +137,5 @@ def test_analyse_email_explicit_adult_spam_is_flagged(client):
     assert response.status_code == 200
     assert data["final_label"] == "Spam"
     assert data["model_prediction"] == "Spam"
+    assert data["keyword_label"] == "Spam"
+    assert data["keyword_score"] >= 50

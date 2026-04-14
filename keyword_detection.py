@@ -1,96 +1,288 @@
-import pandas as pd
-import string
-import spacy
 import re
+from pathlib import Path
 
-nlp = spacy.load("en_core_web_sm")
+import pandas as pd
 
-df = pd.read_csv(r"Datasets/cleaned_SA.csv")
+
+DATASET_PATH = Path(__file__).resolve().parent / "Datasets" / "cleaned_SA.csv"
+
+if DATASET_PATH.exists():
+    df = pd.read_csv(DATASET_PATH)
+else:
+    df = pd.DataFrame(columns=["label", "subject", "body"])
+
+
 suspicious_keywords = []
-    
+
+TOKEN_PATTERN = re.compile(r"[A-Za-z][A-Za-z'-]{2,}")
+
 common_words = {
-    "email", "mail", "message", "information", "account", "service", "time", "day", 
-    "please", "thank", "thanks", "hello", "hi", "dear", "sincerely", "regards", 
-    "contact", "support", "help", "team", "customer", "service", "company", "business",
-    "sun", "mon", "tue", "wed", "thu", "fri", "sat",
-    "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
-    "seconds", "minutes", "hours", "days", "months", "years"
+    "about",
+    "account",
+    "agenda",
+    "business",
+    "check",
+    "company",
+    "contact",
+    "customer",
+    "day",
+    "dear",
+    "discuss",
+    "email",
+    "hello",
+    "help",
+    "information",
+    "mail",
+    "meeting",
+    "message",
+    "office",
+    "please",
+    "project",
+    "regards",
+    "schedule",
+    "service",
+    "support",
+    "team",
+    "thanks",
+    "time",
+    "tomorrow",
+    "update",
+    "updates",
+    "weekly",
 }
 
 positive_words = {
-    "success", "congratulations", "approved", "verified", "secure", "protected", 
-    "safe", "legitimate", "authentic", "genuine", "official", "valid", "trusted", 
-    "authorized", "confirmed", "verified", "guaranteed", "reliable", "honest"
+    "approved",
+    "authentic",
+    "confirmed",
+    "genuine",
+    "honest",
+    "legitimate",
+    "official",
+    "protected",
+    "reliable",
+    "safe",
+    "secure",
+    "success",
+    "trusted",
+    "valid",
+    "verified",
 }
 
-def extract_keywords(text):
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    doc = nlp(text)
-    keywords = {token.text.lower() for token in doc if token.pos_ in ["NOUN", "PROPN"]}
-    
-    # Filter out common and positive words
-    filtered_keywords = keywords - common_words - positive_words
-    
-    return list(filtered_keywords)
+weak_signal_words = {
+    "bring",
+    "clicking",
+    "discussing",
+    "experience",
+    "going",
+    "imagine",
+    "moved",
+    "needed",
+    "review",
+    "status",
+    "verify",
+    "want",
+    "wanted",
+    "would",
+}
 
-# Calculate risk score for spam
+SUSPICIOUS_KEYWORD_WEIGHTS = {
+    "accept": 3,
+    "access": 6,
+    "adult": 18,
+    "bank": 8,
+    "bonus": 7,
+    "cash": 7,
+    "chat": 10,
+    "claim": 8,
+    "click": 5,
+    "confirm": 7,
+    "credentials": 10,
+    "dating": 8,
+    "date": 2,
+    "disclaimer": 2,
+    "exclusive": 8,
+    "free": 6,
+    "fun": 1,
+    "gift": 7,
+    "immediately": 4,
+    "invoice": 6,
+    "limited": 6,
+    "login": 10,
+    "moments": 1,
+    "offer": 6,
+    "otp": 8,
+    "password": 10,
+    "payment": 7,
+    "photos": 8,
+    "prize": 8,
+    "private": 8,
+    "reset": 8,
+    "security": 7,
+    "special": 2,
+    "suspended": 10,
+    "tonight": 2,
+    "urgent": 8,
+    "verify": 9,
+    "wallet": 8,
+    "website": 2,
+    "winner": 8,
+}
+
+SUSPICIOUS_PHRASE_WEIGHTS = {
+    "access your account": 18,
+    "adult chat": 28,
+    "click here": 12,
+    "confirm your account": 18,
+    "exclusive photos": 24,
+    "limited time": 12,
+    "password reset": 24,
+    "private chat": 24,
+    "reset your password": 28,
+    "special moments": 14,
+    "suspended account": 18,
+    "urgent action": 16,
+    "verify your account": 22,
+}
+
+ADULT_SPAM_CLUSTER = {"adult", "chat", "private", "exclusive", "photos", "dating"}
+PHISHING_CLUSTER = {
+    "access",
+    "bank",
+    "claim",
+    "click",
+    "confirm",
+    "credentials",
+    "login",
+    "otp",
+    "password",
+    "payment",
+    "reset",
+    "security",
+    "suspended",
+    "urgent",
+    "verify",
+    "wallet",
+}
+
+
+def _normalize_text(text):
+    return re.sub(r"\s+", " ", str(text or "").lower()).strip()
+
+
+def _tokenize(text):
+    return [token.lower().strip("'") for token in TOKEN_PATTERN.findall(str(text or ""))]
+
+
+def _count_occurrences(text, term):
+    if not text:
+        return 0
+    return len(re.findall(rf"\b{re.escape(term)}\b", text, flags=re.IGNORECASE))
+
+
+def _ordered_matches(subject, body, matched_keywords):
+    ordered = []
+    seen = set()
+
+    for token in _tokenize(f"{subject} {body}"):
+        if token in matched_keywords and token not in seen:
+            ordered.append(token)
+            seen.add(token)
+
+    for token in sorted(matched_keywords - seen):
+        ordered.append(token)
+
+    return ordered
+
+
+def extract_keywords(text):
+    extracted = []
+    seen = set()
+
+    for token in _tokenize(text):
+        if token in seen:
+            continue
+        if token in common_words or token in positive_words or token in weak_signal_words:
+            continue
+        if token.endswith("ly"):
+            continue
+
+        seen.add(token)
+        extracted.append(token)
+
+    return extracted
+
+
 def keyword_score(subject, body):
-    text = f"{subject} {body}"
-    keywords = extract_keywords(text)
-    keyword_counts = {}
-    
-    # Empty the suspicious_keywords list before starting new operations
+    subject_text = _normalize_text(subject)
+    body_text = _normalize_text(body)
+    combined_text = " ".join(part for part in [subject_text, body_text] if part).strip()
+
     global suspicious_keywords
     suspicious_keywords = []
 
-    spam_df = df[df["label"] == 1]
+    if not combined_text:
+        return 0.0
 
-    def calc_score(sub_df):
-        if len(sub_df) == 0:
-            return 0
-        count = 0
-        
-        for kw in keywords:
-            # Subject hits → weight 2
-            subj_hits = sub_df["subject"].str.contains(r'\b' + re.escape(kw) + r'\b', case=False, na=False, regex=True)
-            subj_total = subj_hits.sum()
-            
-            # Body hits → check first 100 words separately
-            body_words = sub_df["body"].str.split()
-            body_hits_weighted = 0
-            for body_list in body_words:
-                if not isinstance(body_list, list):
-                    continue
-                first_100 = body_list[:100]
-                remaining = body_list[100:]
-                body_hits_weighted += sum(1 for w in first_100 if kw.lower() in w.lower()) * 1.5
-                body_hits_weighted += sum(1 for w in remaining if kw.lower() in w.lower()) * 1
+    score = 0.0
+    matched_keywords = set()
 
-            total_hits = subj_total + body_hits_weighted
+    for keyword, weight in SUSPICIOUS_KEYWORD_WEIGHTS.items():
+        subject_hits = _count_occurrences(subject_text, keyword)
+        body_hits = _count_occurrences(body_text, keyword)
 
-            if total_hits > 0:
-                keyword_counts[kw] = keyword_counts.get(kw, 0) + total_hits
-                count += total_hits
-                suspicious_keywords.append(kw)
-            elif total_hits == 0:
-                suspicious_keywords.append(kw)
-        return count * 10 / len(sub_df)
+        if not subject_hits and not body_hits:
+            continue
 
-    score_spam = calc_score(spam_df)
-    return round(score_spam, 2)  # final risk score
+        matched_keywords.add(keyword)
+        score += weight
 
-# Find keywords in a text that are considered suspicious
-def find_keywords():
-    return [kw for kw in suspicious_keywords if kw]
+        if subject_hits:
+            score += weight * 0.35
 
-# Highlight keywords in HTML
-def highlight_keywords(text):
-    for kw in suspicious_keywords:
-        pattern = r'\b({})\b'.format(re.escape(kw))
-        text = re.sub(
-            pattern,
-            f'<span style="background-color: #28a745; font-weight: bold; color: white; padding: 2px 4px; border-radius: 3px;">{kw}</span>',
-            text,
-            flags=re.IGNORECASE
+        if body_hits > 1:
+            score += min(weight * 0.35, (body_hits - 1) * weight * 0.15)
+
+    for phrase, weight in SUSPICIOUS_PHRASE_WEIGHTS.items():
+        phrase_hits = _count_occurrences(combined_text, phrase)
+        if not phrase_hits:
+            continue
+
+        score += weight * min(2, phrase_hits)
+        matched_keywords.update(
+            token for token in phrase.split() if token in SUSPICIOUS_KEYWORD_WEIGHTS
         )
-    return text
+
+    score += min(18, len(matched_keywords) * 1.75)
+
+    if len(matched_keywords & ADULT_SPAM_CLUSTER) >= 3:
+        score += 15
+
+    if len(matched_keywords & PHISHING_CLUSTER) >= 3:
+        score += 12
+
+    suspicious_keywords = _ordered_matches(subject_text, body_text, matched_keywords)
+
+    return round(min(score, 100.0), 2)
+
+
+def find_keywords():
+    return list(suspicious_keywords)
+
+
+def highlight_keywords(text):
+    highlighted = str(text or "")
+
+    for keyword in sorted(suspicious_keywords, key=len, reverse=True):
+        pattern = rf"\b({re.escape(keyword)})\b"
+        highlighted = re.sub(
+            pattern,
+            (
+                '<span style="background-color: #28a745; font-weight: bold; '
+                'color: white; padding: 2px 4px; border-radius: 3px;">\\1</span>'
+            ),
+            highlighted,
+            flags=re.IGNORECASE,
+        )
+
+    return highlighted
