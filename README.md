@@ -10,6 +10,10 @@ pinned: false
 
 # Project Title: Phishing Email Detection
 
+> 📄 **Case study:** https://waiyanaung.dev/projects/phishing-email-detection
+> 🔗 **Live demo:** https://huggingface.co/spaces/nik-fireball/phishing-email-detection
+> 🎥 **Demo video:** https://youtu.be/_c5pOhqVlF4
+
 ## Group Members
 
 | Name         | Student ID |
